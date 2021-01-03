@@ -14,6 +14,7 @@ std::string GetLastErrorString()
 	LocalFree(s);
 	return str;
 }
+
 SocketServer::SocketServer(const UInt16 port)
 {
 	this->m_serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -24,7 +25,7 @@ SocketServer::SocketServer(const UInt16 port)
 	sockaddr_in s_address{};
 	s_address.sin_family = AF_INET;
 	s_address.sin_port = htons(port);
-	s_address.sin_addr.s_addr = INADDR_ANY;
+	s_address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 	auto result = bind(this->m_serverSocket, reinterpret_cast<sockaddr*>(&s_address), sizeof(s_address));
 	if (result == -1)
 	{
@@ -35,6 +36,7 @@ SocketServer::SocketServer(const UInt16 port)
 	{
 		throw SocketException("Failed to listen to socket");
 	}
+	_MESSAGE("[RUNTIME] Successfully loaded server");
 }
 
 void SocketServer::WaitForConnection()

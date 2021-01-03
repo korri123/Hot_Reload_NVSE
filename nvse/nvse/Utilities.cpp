@@ -630,6 +630,16 @@ ScopedLock::~ScopedLock()
 	m_critSection.Leave();
 }
 
+bool Cmd_Default_Execute(COMMAND_ARGS)
+{
+	return true;
+}
+
+bool Cmd_Default_Eval(COMMAND_ARGS_EVAL)
+{
+	return true;
+}
+
 #if RUNTIME
 
 UnorderedSet<UInt32> g_warnedScripts;

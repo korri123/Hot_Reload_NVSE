@@ -12,6 +12,7 @@
 #include "GameData.h"
 #include "HotReloadUtils.h"
 #include "ScriptTokenCache.h"
+#include "ScriptCommands.h"
 
 extern NVSEDataInterface* g_dataInterface;
 
@@ -39,7 +40,6 @@ public:
 	std::string esmName;
 };
 
-SocketServer g_hotReloadServer(g_nvsePort);
 std::thread g_ReloadThread;
 
 void HotReloadConsolePrint(const char* fmt, ...)
@@ -64,7 +64,6 @@ void Error(const char* fmt, ...)
 	HotReloadConsolePrint("Error - %s", errorMsg);
 	QueueUIMessage("Hot reload error (see console print)", 0, reinterpret_cast<const char*>(0x1049638), nullptr, 2.5F,
 	               false);
-	g_hotReloadServer.CloseConnection();
 }
 
 bool HandleScriptVarChanges(Script* script, const std::vector<VarInfoObject>& vec)
@@ -183,34 +182,35 @@ ICriticalSection g_criticalSection;
 
 void HandleHotReload()
 {
-	g_hotReloadServer.WaitForConnection();
+	static SocketServer hotReloadServer(g_nvsePort);
+	hotReloadServer.WaitForConnection();
 	ScriptTransferObject obj{};
-	g_hotReloadServer.ReadData(obj);
+	hotReloadServer.ReadData(obj);
 	std::string modName;
-	g_hotReloadServer.ReadData(modName, obj.nameLength);
+	hotReloadServer.ReadData(modName, obj.nameLength);
 	std::vector<char> scriptData(obj.dataLength, 0);
-	g_hotReloadServer.ReadData(scriptData.data(), obj.dataLength);
+	hotReloadServer.ReadData(scriptData.data(), obj.dataLength);
 	std::vector<VarInfoObject> varInfos;
 	for (auto i = 0U; i < obj.numVars; ++i)
 	{
 		VarInfoTransferObject varInfo;
-		g_hotReloadServer.ReadData(varInfo);
+		hotReloadServer.ReadData(varInfo);
 		std::string varName;
-		g_hotReloadServer.ReadData(varName, varInfo.nameLength);
+		hotReloadServer.ReadData(varName, varInfo.nameLength);
 		varInfos.emplace_back(varInfo, varName);
 	}
 	std::vector<RefInfoObject> refInfos;
 	for (auto i = 0U; i < obj.numRefs; ++i)
 	{
 		RefInfoTransferObject refInfo;
-		g_hotReloadServer.ReadData(refInfo);
+		hotReloadServer.ReadData(refInfo);
 		std::string refName;
-		g_hotReloadServer.ReadData(refName, refInfo.nameLength);
+		hotReloadServer.ReadData(refName, refInfo.nameLength);
 		std::string esmName;
-		g_hotReloadServer.ReadData(esmName, refInfo.esmNameLength);
+		hotReloadServer.ReadData(esmName, refInfo.esmNameLength);
 		refInfos.emplace_back(refInfo, refName, esmName);
 	}
-	g_hotReloadServer.CloseConnection();
+	hotReloadServer.CloseConnection();
 	const auto* modInfo = DataHandler::Get()->LookupModByName(modName.c_str());
 	if (!modInfo)
 	{
@@ -257,6 +257,7 @@ void HandleHotReload()
 		HotReloadConsolePrint("Reloaded script '%s' in '%s'", script->GetName(), modName.c_str());
 		QueueUIMessage("Hot reloaded script", 0, nullptr, nullptr, 2.5F, false);
 		g_handledEventLists.clear();
+		g_gameHotLoadedScripts.Insert(script->refID);
 	});
 	
 }

@@ -67,6 +67,8 @@
     </ClCompile>
     <ClCompile Include="HotReloadRuntime.cpp" />
     <ClCompile Include="HotReloadEditor.cpp" />
+    <ClCompile Include="ScriptCommands.cpp" />
+    <ClCompile Include="OpenInGeckEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvse\nvse\GameAPI.h">
@@ -124,6 +126,7 @@
     <ClInclude Include="..\nvse\nvse\SocketUtils.h">
       <Filter>nvse</Filter>
     </ClInclude>
+    <ClInclude Include="ScriptCommands.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
