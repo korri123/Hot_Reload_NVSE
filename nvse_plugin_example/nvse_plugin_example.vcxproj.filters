@@ -62,6 +62,11 @@
     <ClCompile Include="..\nvse\nvse\printf.cpp">
       <Filter>nvse</Filter>
     </ClCompile>
+    <ClCompile Include="..\nvse\nvse\SocketUtils.cpp">
+      <Filter>nvse</Filter>
+    </ClCompile>
+    <ClCompile Include="HotReloadRuntime.cpp" />
+    <ClCompile Include="HotReloadEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvse\nvse\GameAPI.h">
@@ -113,6 +118,10 @@
       <Filter>nvse</Filter>
     </ClInclude>
     <ClInclude Include="..\nvse\nvse\utility.h">
+      <Filter>nvse</Filter>
+    </ClInclude>
+    <ClInclude Include="HotReloadUtils.h" />
+    <ClInclude Include="..\nvse\nvse\SocketUtils.h">
       <Filter>nvse</Filter>
     </ClInclude>
   </ItemGroup>

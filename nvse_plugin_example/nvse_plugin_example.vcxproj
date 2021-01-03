@@ -22,6 +22,7 @@
     <ProjectGuid>{AE7CFEE7-4058-4E3C-ADC2-AE7480EE2028}</ProjectGuid>
     <RootNamespace>nvse_plugin_example</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release ng|Win32'" Label="Configuration">
@@ -69,6 +70,7 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>hot_reload</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
@@ -105,6 +107,7 @@
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Message>Installing DLL...</Message>
@@ -206,6 +209,7 @@
     <ClCompile Include="..\nvse\nvse\GameTypes.cpp" />
     <ClCompile Include="..\nvse\nvse\printf.cpp" />
     <ClCompile Include="..\nvse\nvse\SafeWrite.cpp" />
+    <ClCompile Include="..\nvse\nvse\SocketUtils.cpp" />
     <ClCompile Include="..\nvse\nvse\Utilities.cpp" />
     <ClCompile Include="..\nvse\nvse\utility.cpp" />
     <ClCompile Include="dllmain.c">
@@ -218,6 +222,8 @@
       <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ForcedIncludeFiles>
     </ClCompile>
+    <ClCompile Include="HotReloadEditor.cpp" />
+    <ClCompile Include="HotReloadRuntime.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -236,8 +242,10 @@
     <ClInclude Include="..\nvse\nvse\GameTiles.h" />
     <ClInclude Include="..\nvse\nvse\GameTypes.h" />
     <ClInclude Include="..\nvse\nvse\SafeWrite.h" />
+    <ClInclude Include="..\nvse\nvse\SocketUtils.h" />
     <ClInclude Include="..\nvse\nvse\Utilities.h" />
     <ClInclude Include="..\nvse\nvse\utility.h" />
+    <ClInclude Include="HotReloadUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

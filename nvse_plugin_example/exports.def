@@ -1,4 +1,4 @@
-LIBRARY	"nvse_plugin_example"
+LIBRARY	"hot_reload"
 EXPORTS
 NVSEPlugin_Query
 NVSEPlugin_Load
