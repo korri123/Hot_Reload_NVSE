@@ -316,11 +316,6 @@ __declspec(naked) void Hook_HandleScriptEventListChange()
 
 void InitializeHotReloadRuntime()
 {
-	WSADATA wsaData;
-	const auto result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (result != 0)
-		return;
-
 	WriteRelJump(0x5E158A, UInt32(Hook_HandleScriptEventListChange));
 	g_ReloadThread = std::thread(InitHotReloadServer, 0);
 	g_ReloadThread.detach();

@@ -45,10 +45,10 @@ bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
 
 bool NVSEPlugin_Load(const NVSEInterface* nvse)
 {
+	g_dataInterface = static_cast<NVSEDataInterface*>(nvse->QueryInterface(kInterface_Data));
+	
 	WSADATA wsaData;
 	const auto result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-
-	g_dataInterface = static_cast<NVSEDataInterface*>(nvse->QueryInterface(kInterface_Data));
 	if (result != 0)
 	{
 		_ERROR("Failed to initialize WinSock 2");
