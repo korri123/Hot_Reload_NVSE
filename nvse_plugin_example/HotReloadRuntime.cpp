@@ -66,6 +66,16 @@ void Error(const char* fmt, ...)
 	               false);
 }
 
+void QueueErrorMessage(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+
+	char errorMsg[0x400];
+	vsprintf_s(errorMsg, 0x400, fmt, args);
+	g_mainThreadExecutionQueue.push([=]() { Error(errorMsg); });
+}
+
 bool HandleScriptVarChanges(Script* script, const std::vector<VarInfoObject>& vec)
 {
 	tList<VariableInfo> newVars{};
@@ -214,27 +224,27 @@ void HandleHotReload()
 	const auto* modInfo = DataHandler::Get()->LookupModByName(modName.c_str());
 	if (!modInfo)
 	{
-		Error("Mod name %s is not loaded in-game");
+		QueueErrorMessage("Mod name %s is not loaded in-game");
 		return;
 	}
 	const auto refId = obj.scriptRefID + (modInfo->modIndex << 24);
 	auto* form = LookupFormByID(refId);
 	if (!form)
 	{
-		Error("Reloading new scripts is not supported.");
+		QueueErrorMessage("Reloading new scripts is not supported.");
 		return;
 	}
 	auto* script = DYNAMIC_CAST(form, TESForm, Script);
 	if (!script)
 	{
-		Error("Tried to hot reload an invalid script");
+		QueueErrorMessage("Tried to hot reload an invalid script");
 		return;
 	}
 
 
 	ScopedLock lock(g_criticalSection);
 	// avoid concurrency issues as the server is running on a different thread
-	g_hotReloadQueue.push([=]()
+	g_mainThreadExecutionQueue.push([=]()
 	{
 		auto* oldVarList = GetVarList(script);
 		if (!HandleRefListChanges(script, refInfos))
@@ -273,7 +283,7 @@ void InitHotReloadServer(int i)
 	}
 	catch (const SocketException& e)
 	{
-		Error("Encountered error in Hot Reload server, shutting down... %s", e.what());
+		QueueErrorMessage("Encountered error in Hot Reload server, shutting down... %s", e.what());
 	}
 }
 
