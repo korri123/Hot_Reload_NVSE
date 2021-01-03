@@ -3,11 +3,27 @@
 
 IDebugLog gLog("hot_reload.log");
 NVSEDataInterface* g_dataInterface;
+PluginHandle g_pluginHandle = kPluginHandle_Invalid;
+bool isEditor;
+
+void MessageHandler(NVSEMessagingInterface::Message* msg)
+{
+	if (msg->type == NVSEMessagingInterface::kMessage_MainGameLoop && !isEditor)
+	{
+		ScopedLock lock(g_criticalSection);
+		while (!g_hotReloadQueue.empty())
+		{
+			const auto& callback = g_hotReloadQueue.back();
+			callback();
+			g_hotReloadQueue.pop();
+		}
+	}
+}
 
 bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
 {
 	info->infoVersion = PluginInfo::kInfoVersion;
-	info->name = "Hot_Reload";
+	info->name = "hot_reload";
 	info->version = 2;
 
 	// version checks
@@ -55,6 +71,10 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 		return false;
 	}
 
+	g_pluginHandle = nvse->GetPluginHandle();
+	auto* messagingInterface = static_cast<NVSEMessagingInterface*>(nvse->QueryInterface(kInterface_Messaging));
+	messagingInterface->RegisterListener(g_pluginHandle, "NVSE", MessageHandler);
+
 	if (nvse->isEditor)
 	{
 		InitializeHotReloadEditor();
@@ -63,6 +83,6 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	{
 		InitializeHotReloadRuntime();
 	}
-	
+	isEditor = nvse->isEditor;
 	return true;
 }

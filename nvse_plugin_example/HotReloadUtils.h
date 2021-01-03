@@ -1,4 +1,10 @@
 #pragma once
+#include <queue>
+#include <functional>
+#include "common/ICriticalSection.h"
+
+extern std::queue<std::function<void()>> g_hotReloadQueue;
+extern ICriticalSection g_criticalSection;
 
 class ScriptTransferObject
 {

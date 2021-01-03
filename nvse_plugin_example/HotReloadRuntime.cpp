@@ -1,3 +1,6 @@
+#include <functional>
+#include <queue>
+
 #include "SocketUtils.h"
 #include "GameAPI.h"
 #include "GameRTTI.h"
@@ -15,14 +18,23 @@ extern NVSEDataInterface* g_dataInterface;
 class VarInfoObject : public VarInfoTransferObject
 {
 public:
-	VarInfoObject(const VarInfoTransferObject& obj, std::string name) : VarInfoTransferObject(obj), name(std::move(name)) {}
+	VarInfoObject(const VarInfoTransferObject& obj, std::string name) : VarInfoTransferObject(obj),
+	                                                                    name(std::move(name))
+	{
+	}
+
 	std::string name;
 };
 
 class RefInfoObject : public RefInfoTransferObject
 {
 public:
-	RefInfoObject(const RefInfoTransferObject& obj, std::string name, std::string esmName) : RefInfoTransferObject(obj), name(std::move(name)), esmName(std::move(esmName)) {}
+	RefInfoObject(const RefInfoTransferObject& obj, std::string name, std::string esmName) : RefInfoTransferObject(obj),
+	                                                                                         name(std::move(name)),
+	                                                                                         esmName(std::move(esmName))
+	{
+	}
+
 	std::string name;
 	std::string esmName;
 };
@@ -50,7 +62,8 @@ void Error(const char* fmt, ...)
 
 	_MESSAGE("Hot reload error: %s", errorMsg);
 	HotReloadConsolePrint("Error - %s", errorMsg);
-	QueueUIMessage("Hot reload error (see console print)", 0, reinterpret_cast<const char*>(0x1049638), nullptr, 2.5F, false);
+	QueueUIMessage("Hot reload error (see console print)", 0, reinterpret_cast<const char*>(0x1049638), nullptr, 2.5F,
+	               false);
 	g_hotReloadServer.CloseConnection();
 }
 
@@ -133,7 +146,10 @@ class ReloadedScript
 public:
 	tList<VariableInfo>* oldVarList;
 
-	ReloadedScript(tList<VariableInfo>* oldVarList) : oldVarList(oldVarList) {}
+	ReloadedScript(tList<VariableInfo>* oldVarList) : oldVarList(oldVarList)
+	{
+	}
+
 	~ReloadedScript()
 	{
 		oldVarList->DeleteAll();
@@ -161,6 +177,9 @@ VariableInfo* GetVariableInfo(tList<VariableInfo>& list, UInt32 varIdx)
 	}
 	return nullptr;
 }
+
+std::queue<std::function<void()>> g_hotReloadQueue;
+ICriticalSection g_criticalSection;
 
 void HandleHotReload()
 {
@@ -211,31 +230,34 @@ void HandleHotReload()
 		Error("Tried to hot reload an invalid script");
 		return;
 	}
-	auto* oldVarList = GetVarList(script);
-	if (!HandleScriptVarChanges(script, varInfos))
-		return;
-	if (!HandleRefListChanges(script, refInfos))
-	{
-		reinterpret_cast<tList<VariableInfo>*>(&script->varList)->DeleteAll();
-		script->varList = *reinterpret_cast<Script::VarInfoEntry*>(oldVarList);
-		return;
-	}
-	auto* oldDataPtr = script->data;
-	auto* newData = GameHeapAlloc(obj.dataLength);
-	std::memcpy(newData, scriptData.data(), obj.dataLength);
-	script->data = newData;
-	GameHeapFree(oldDataPtr);
-	script->info.dataLength = obj.dataLength;
-	script->info.varCount = obj.numVars;
-	script->info.numRefs = obj.numRefs;
-	const auto reloadedScriptIter = g_reloadedScripts.find(script->refID);
-	if (reloadedScriptIter != g_reloadedScripts.end())
-		g_reloadedScripts.erase(reloadedScriptIter);
-	g_reloadedScripts.emplace(std::make_pair(script->refID, oldVarList));
-	HotReloadConsolePrint("Reloaded script '%s' in '%s'", script->GetName(), modName.c_str());
-	QueueUIMessage("Reloaded Script", 0, nullptr, nullptr, 2.5F, false);
 
-	g_handledEventLists.clear();
+
+	ScopedLock lock(g_criticalSection);
+	// avoid concurrency issues as the server is running on a different thread
+	g_hotReloadQueue.push([=]()
+	{
+		auto* oldVarList = GetVarList(script);
+		if (!HandleRefListChanges(script, refInfos))
+			return;
+		if (!HandleScriptVarChanges(script, varInfos))
+			return;
+
+		auto* oldDataPtr = script->data;
+		auto* newData = GameHeapAlloc(obj.dataLength);
+		std::memcpy(newData, scriptData.data(), obj.dataLength);
+		script->data = newData;
+		GameHeapFree(oldDataPtr);
+		script->info.dataLength = obj.dataLength;
+		script->info.varCount = obj.numVars;
+		script->info.numRefs = obj.numRefs;
+		const auto reloadedScriptIter = g_reloadedScripts.find(script->refID);
+		if (reloadedScriptIter != g_reloadedScripts.end())
+			g_reloadedScripts.erase(reloadedScriptIter);
+		g_reloadedScripts.emplace(std::make_pair(script->refID, oldVarList));
+		HotReloadConsolePrint("Reloaded script '%s' in '%s'", script->GetName(), modName.c_str());
+		QueueUIMessage("Hot reloaded script", 0, nullptr, nullptr, 2.5F, false);
+		g_handledEventLists.clear();
+	});
 	
 }
 
@@ -262,7 +284,8 @@ void __fastcall HandleScriptEventListChange(ScriptRunner* runner, Script* script
 		return;
 	if (g_handledEventLists.find(runner->eventList) != g_handledEventLists.end())
 		return;
-	auto* newEventListVars = static_cast<tList<ScriptEventList::Var>*>(GameHeapAlloc(sizeof(tList<ScriptEventList::Var>)));
+	auto* newEventListVars = static_cast<tList<ScriptEventList::Var>*>(GameHeapAlloc(
+		sizeof(tList<ScriptEventList::Var>)));
 	*newEventListVars = tList<ScriptEventList::Var>();
 	auto& oldScriptVarInfos = *reloadScriptIter->second.oldVarList;
 	auto& newScriptVarInfos = *reinterpret_cast<tList<VariableInfo>*>(&script->varList);
@@ -303,7 +326,7 @@ __declspec(naked) void Hook_HandleScriptEventListChange()
 	static UInt32 returnAddress = 0x5E158F;
 	static UInt32 hookedCall = 0x671D10;
 	__asm
-	{
+		{
 		call hookedCall
 		push eax
 		mov ecx, [ebp - 0xED0]
@@ -311,7 +334,7 @@ __declspec(naked) void Hook_HandleScriptEventListChange()
 		call HandleScriptEventListChange
 		pop eax
 		jmp returnAddress
-	}
+		}
 }
 
 void InitializeHotReloadRuntime()
