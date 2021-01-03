@@ -319,5 +319,4 @@ void InitializeHotReloadRuntime()
 	WriteRelJump(0x5E158A, UInt32(Hook_HandleScriptEventListChange));
 	g_ReloadThread = std::thread(InitHotReloadServer, 0);
 	g_ReloadThread.detach();
-
 }
