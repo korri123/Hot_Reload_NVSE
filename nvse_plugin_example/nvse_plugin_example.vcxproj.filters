@@ -122,11 +122,12 @@
     <ClInclude Include="..\nvse\nvse\utility.h">
       <Filter>nvse</Filter>
     </ClInclude>
-    <ClInclude Include="HotReloadUtils.h" />
     <ClInclude Include="..\nvse\nvse\SocketUtils.h">
       <Filter>nvse</Filter>
     </ClInclude>
     <ClInclude Include="ScriptCommands.h" />
+    <ClInclude Include="HotReload.h" />
+    <ClInclude Include="OpenInGeck.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

@@ -392,8 +392,9 @@
     <ClInclude Include="..\nvse\nvse\SocketUtils.h" />
     <ClInclude Include="..\nvse\nvse\Utilities.h" />
     <ClInclude Include="..\nvse\nvse\utility.h" />
+    <ClInclude Include="OpenInGeck.h" />
     <ClInclude Include="ScriptCommands.h" />
-    <ClInclude Include="HotReloadUtils.h" />
+    <ClInclude Include="HotReload.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

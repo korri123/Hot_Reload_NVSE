@@ -22,9 +22,9 @@ public:
 
 	void WaitForConnection();
 	void CloseConnection();
-	void ReadData(char* buffer, UInt32 numBytes);
+	void ReadData(char* buffer, UInt32 numBytes) const;
 
-	void ReadData(std::string& strBuf, UInt32 numBytes)
+	void ReadData(std::string& strBuf, UInt32 numBytes) const
 	{
 		std::vector<char> buf(numBytes, 0);
 		try
@@ -39,7 +39,7 @@ public:
 	}
 
 	template <typename T>
-	void ReadData(T& t)
+	void ReadData(T& t) const
 	{
 		try
 		{
@@ -61,7 +61,7 @@ public:
 	void SendData(const char* data, std::size_t size) const;
 
 	template<typename T>
-	void SendData(T& t)
+	void SendData(T t)
 	{
 		try
 		{

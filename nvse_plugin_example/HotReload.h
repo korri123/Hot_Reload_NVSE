@@ -3,7 +3,7 @@
 #include <functional>
 #include "common/ICriticalSection.h"
 
-extern std::queue<std::function<void()>> g_hotReloadQueue;
+extern std::queue<std::function<void()>> g_mainThreadExecutionQueue;
 extern ICriticalSection g_criticalSection;
 
 class ScriptTransferObject

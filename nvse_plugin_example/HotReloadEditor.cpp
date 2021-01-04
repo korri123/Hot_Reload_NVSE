@@ -4,7 +4,7 @@
 #include <thread>
 
 #include "GameData.h"
-#include "HotReloadUtils.h"
+#include "HotReload.h"
 #include "ScriptTokenCache.h"
 
 typedef void (__cdecl* _EditorLog)(ScriptBuffer* Buffer, const char* format, ...);

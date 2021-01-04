@@ -1,4 +1,5 @@
-#include "HotReloadUtils.h"
+#include "HotReload.h"
+#include "OpenInGeck.h"
 #include "nvse/PluginAPI.h"
 #include "PluginAPI.h"
 #include "ScriptCommands.h"
@@ -18,11 +19,11 @@ void MessageHandler(NVSEMessagingInterface::Message* msg)
 	if (msg->type == NVSEMessagingInterface::kMessage_MainGameLoop)
 	{
 		ScopedLock lock(g_criticalSection);
-		while (!g_hotReloadQueue.empty())
+		while (!g_mainThreadExecutionQueue.empty())
 		{
-			const auto& callback = g_hotReloadQueue.back();
+			const auto& callback = g_mainThreadExecutionQueue.back();
 			callback();
-			g_hotReloadQueue.pop();
+			g_mainThreadExecutionQueue.pop();
 		}
 	}
 
@@ -102,6 +103,7 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 
 	nvse->SetOpcodeBase(0x3911);
 	RegisterScriptCommand(GetGameHotReloaded);
+	RegisterScriptCommand(ToGeck);
 
 #if RUNTIME
 	auto* messagingInterface = static_cast<NVSEMessagingInterface*>(nvse->QueryInterface(kInterface_Messaging));
@@ -109,7 +111,7 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	InitializeHotReloadRuntime();
 #else
 	InitializeHotReloadEditor();
-
+	StartGeckServer();
 #endif
 	_MESSAGE("Successfully loaded");
 	return true;

@@ -64,7 +64,7 @@ void SocketServer::CloseConnection()
 
 char s_recvBuf[0x1000];
 
-void SocketServer::ReadData(char* buffer, UInt32 numBytes)
+void SocketServer::ReadData(char* buffer, UInt32 numBytes) const
 {
 	auto total = 0U;
 	while (total < numBytes)

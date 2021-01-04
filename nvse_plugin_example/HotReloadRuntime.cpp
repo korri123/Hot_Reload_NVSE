@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 #include "GameData.h"
-#include "HotReloadUtils.h"
+#include "HotReload.h"
 #include "ScriptTokenCache.h"
 #include "ScriptCommands.h"
 
@@ -187,7 +187,7 @@ VariableInfo* GetVariableInfo(tList<VariableInfo>& list, UInt32 varIdx)
 	return nullptr;
 }
 
-std::queue<std::function<void()>> g_hotReloadQueue;
+std::queue<std::function<void()>> g_mainThreadExecutionQueue;
 ICriticalSection g_criticalSection;
 
 void HandleHotReload()
@@ -265,7 +265,8 @@ void HandleHotReload()
 			g_reloadedScripts.erase(reloadedScriptIter);
 		g_reloadedScripts.emplace(std::make_pair(script->refID, oldVarList));
 		HotReloadConsolePrint("Reloaded script '%s' in '%s'", script->GetName(), modName.c_str());
-		QueueUIMessage("Hot reloaded script", 0, nullptr, nullptr, 2.5F, false);
+		const auto queuedMsg = "Hot reloaded " + std::string(script->GetName());
+		QueueUIMessage(queuedMsg.c_str(), 0, nullptr, nullptr, 2.5F, false);
 		g_handledEventLists.clear();
 		g_gameHotLoadedScripts.Insert(script->refID);
 	});

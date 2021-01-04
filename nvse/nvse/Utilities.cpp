@@ -696,3 +696,13 @@ void ShowRuntimeError(Script* script, const char* fmt, ...)
 }
 #endif
 #endif
+
+std::string FormatString(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+
+	char msg[0x400];
+	vsprintf_s(msg, 0x400, fmt, args);
+	return msg;
+}
