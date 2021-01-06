@@ -269,6 +269,7 @@ void HandleHotReload()
 		QueueUIMessage(queuedMsg.c_str(), 0, nullptr, nullptr, 2.5F, false);
 		g_handledEventLists.clear();
 		g_gameHotLoadedScripts.Insert(script->refID);
+		g_dataInterface->ClearScriptDataCache();
 	});
 	
 }
@@ -330,7 +331,6 @@ void __fastcall HandleScriptEventListChange(ScriptRunner* runner, Script* script
 	oldEventListVars->DeleteAll();
 	runner->eventList->m_vars = reinterpret_cast<ScriptEventList::VarEntry*>(newEventListVars);
 	g_handledEventLists.insert(runner->eventList);
-	g_dataInterface->ClearScriptDataCache();
 }
 
 __declspec(naked) void Hook_HandleScriptEventListChange()

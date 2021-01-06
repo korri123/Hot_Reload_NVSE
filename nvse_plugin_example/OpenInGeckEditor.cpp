@@ -1,3 +1,6 @@
+#include <functional>
+#include <queue>
+
 #include "OpenInGeck.h"
 #include <thread>
 #include "SocketUtils.h"
@@ -6,16 +9,22 @@
 
 HWND__* g_hwnd;
 
+std::queue<std::function<void()>> g_editorMainWindowExecutionQueue;
+
+void MainWindowCallback()
+{
+	while (!g_editorMainWindowExecutionQueue.empty())
+	{
+		const auto& top = g_editorMainWindowExecutionQueue.back();
+		top();
+		g_editorMainWindowExecutionQueue.pop();
+	}
+}
+
 void HandleOpenRef(SocketServer& server)
 {
 	GeckOpenRefTransferObject obj;
 	server.ReadData(obj);
-	auto* form = LookupFormByID(obj.refId);
-	if (!form)
-	{
-		ShowErrorMessageBox(FormatString("Tried to load unloaded or invalid form id %X", obj.refId).c_str());
-		return;
-	}
 	if (!g_hwnd)
 	{
 		auto* window = FindWindow("Garden of Eden Creation Kit", nullptr);
@@ -26,8 +35,20 @@ void HandleOpenRef(SocketServer& server)
 		}
 		g_hwnd = window;
 	}
-	(*reinterpret_cast<void(__thiscall**)(__int32, HWND, __int32, __int32)>(*reinterpret_cast<__int32*>(form) + 0x164))(
-		reinterpret_cast<UInt32>(form), g_hwnd, 0, 1);
+	g_editorMainWindowExecutionQueue.push([=]()
+	{
+		auto* form = LookupFormByID(obj.refId);
+		if (!form)
+		{
+			ShowErrorMessageBox(FormatString("Tried to load unloaded or invalid form id %X", obj.refId).c_str());
+			return;
+		}
+		(*reinterpret_cast<void(__thiscall**)(__int32, HWND, __int32, __int32)>(*reinterpret_cast<__int32*>(form) + 0x164))(
+			reinterpret_cast<UInt32>(form), g_hwnd, 0, 1);
+		SetForegroundWindow(g_hwnd);
+		GeckExtenderMessageLog("Opened reference %X", obj.refId);
+	});
+	SendMessage(g_hwnd, WM_COMMAND, 0xFEED, reinterpret_cast<LPARAM>(MainWindowCallback));
 }
 
 void HandleOpenInGeck()

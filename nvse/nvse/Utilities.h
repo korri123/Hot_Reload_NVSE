@@ -212,3 +212,5 @@ inline void GameHeapFree(void* ptr)
 #endif
 
 std::string FormatString(const char* fmt, ...);
+
+void GeckExtenderMessageLog(const char* fmt, ...);

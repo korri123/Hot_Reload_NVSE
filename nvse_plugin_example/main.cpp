@@ -39,7 +39,9 @@ bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
 	// version checks
 	if (nvse->nvseVersion < NVSE_VERSION_INTEGER)
 	{
-		_ERROR("NVSE version too old (got %08X expected at least %08X)", nvse->nvseVersion, NVSE_VERSION_INTEGER);
+		const auto str = FormatString("Hot Reload Error: NVSE version too old (got %08X expected at least %08X). Plugin will NOT load!", nvse->nvseVersion, NVSE_VERSION_INTEGER);
+		ShowErrorMessageBox(str.c_str());
+		_ERROR(str.c_str());
 		return false;
 	}
 

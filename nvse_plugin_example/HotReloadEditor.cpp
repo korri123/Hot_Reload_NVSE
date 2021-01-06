@@ -52,45 +52,40 @@ void DoSendHotReloadData(Script* script)
 	}
 }
 
-void FreeScriptBuffer(ScriptBuffer* buffer)
-{
-	FormHeap_Free(buffer->scriptName.m_data);
-	FormHeap_Free(buffer);
-}
 
-void SendHotReloadData(Script* script, ScriptBuffer* buffer)
+void SendHotReloadData(Script* script)
 {
+	if (!script)
+	{
+		GeckExtenderMessageLog("Script was null!");
+	}
 	try
 	{
-		// ShowCompilerError(buffer, "Attempting hot reload");
 		DoSendHotReloadData(script);
-		// ShowCompilerError(buffer, "Hot reload succeeded");
+
+		const auto* scriptName = script->editorData.editorID.CStr();
+		if (scriptName && strlen(scriptName))
+		{
+			GeckExtenderMessageLog("Hot reloaded script '%s'", scriptName);
+		}
+		else
+		{
+			GeckExtenderMessageLog("Hot reloaded script");
+		}
 	}
 	catch (const SocketException& e)
 	{
 		_MESSAGE("Hot reload error: %s", e.what());
 		if (e.m_errno != 10061) // game isn't open
-			EditorLog(buffer, "Hot reload error: %s", e.what());
+			GeckExtenderMessageLog("Hot reload error: %s", e.what());
 	}
-	FreeScriptBuffer(buffer);
 }
 
 std::thread g_hotReloadClientThread;
 
-ScriptBuffer* CopyScriptBuffer(ScriptBuffer* buffer)
+void __fastcall SendHotReloadDataHook(Script* script)
 {
-	auto* copy = static_cast<ScriptBuffer*>(FormHeap_Allocate(sizeof(ScriptBuffer))); // script buffer gets destroyed immediately
-	*copy = *buffer;
-	copy->scriptName = String();
-	copy->scriptName.Set(buffer->scriptName.CStr());
-	copy->curLineNumber = 0;
-	return copy;
-}
-
-
-void __fastcall SendHotReloadDataHook(Script* script, ScriptBuffer* buffer)
-{
-	g_hotReloadClientThread = std::thread(SendHotReloadData, script, CopyScriptBuffer(buffer));
+	g_hotReloadClientThread = std::thread(SendHotReloadData, script);
 	g_hotReloadClientThread.detach();
 }
 
@@ -103,10 +98,8 @@ __declspec(naked) void Hook_HotReload()
 	__asm
 	{
 		mov [script], ecx
-		mov [buffer], esi
 		call Script__CopyFromScriptBuffer
 		mov ecx, script
-		mov edx, buffer
 		call SendHotReloadDataHook
 		jmp returnLocation
 	}
