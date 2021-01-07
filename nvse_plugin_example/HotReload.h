@@ -38,8 +38,7 @@ public:
 	UInt32 varIdx{};
 
 	RefInfoTransferObject(const UInt32 nameLength, const UInt32 formId, const UInt32 esmNameLength, const UInt32 varIdx)
-		: nameLength(nameLength),
-		formId(formId), esmNameLength(esmNameLength), varIdx(varIdx)
+		: nameLength(nameLength), formId(formId), esmNameLength(esmNameLength), varIdx(varIdx)
 	{}
 
 	RefInfoTransferObject() = default;

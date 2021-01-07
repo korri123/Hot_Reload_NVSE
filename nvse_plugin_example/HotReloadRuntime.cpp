@@ -73,6 +73,7 @@ void QueueErrorMessage(const char* fmt, ...)
 
 	char errorMsg[0x400];
 	vsprintf_s(errorMsg, 0x400, fmt, args);
+	ScopedLock lock(g_criticalSection);
 	g_mainThreadExecutionQueue.push([=]() { Error(errorMsg); });
 }
 

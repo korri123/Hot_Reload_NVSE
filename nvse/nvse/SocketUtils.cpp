@@ -63,14 +63,12 @@ void SocketServer::CloseConnection()
 	this->m_clientSocket = 0;
 }
 
-char s_recvBuf[0x1000];
-
 void SocketServer::ReadData(char* buffer, UInt32 numBytes) const
 {
 	auto total = 0U;
 	while (total < numBytes)
 	{
-		const auto numBytesRead = recv(m_clientSocket, s_recvBuf, numBytes - total, 0);
+		const auto numBytesRead = recv(m_clientSocket, buffer + total, numBytes - total, 0);
 		if (numBytesRead == -1)
 		{
 			throw SocketException("Failed to read data (num bytes: " + std::to_string(numBytes)+ ")");
@@ -79,7 +77,6 @@ void SocketServer::ReadData(char* buffer, UInt32 numBytes) const
 		{
 			throw SocketException("Tried to receive more bytes than sent");
 		}
-		std::memcpy(buffer + total, s_recvBuf, numBytesRead);
 		total += numBytesRead;
 	}
 }
