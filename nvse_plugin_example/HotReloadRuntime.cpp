@@ -232,7 +232,7 @@ void HandleHotReload()
 	auto* form = LookupFormByID(refId);
 	if (!form)
 	{
-		QueueErrorMessage("Reloading new scripts is not supported.");
+		QueueErrorMessage("Reloading new scripts is not supported. (Script form ID %X is not loaded in game)", refId);
 		return;
 	}
 	auto* script = DYNAMIC_CAST(form, TESForm, Script);

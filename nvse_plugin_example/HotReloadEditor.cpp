@@ -10,19 +10,37 @@
 typedef void (__cdecl* _EditorLog)(ScriptBuffer* Buffer, const char* format, ...);
 const _EditorLog EditorLog = reinterpret_cast<_EditorLog>(0x5C5730);
 
+bool ValidString(const char* str)
+{
+	return str && strlen(str);
+}
+
 void DoSendHotReloadData(Script* script)
 {
-	const auto* activeFile = DataHandler::Get()->activeFile;
+	const char* esmFileName;
+	if (script->mods.Head() && script->mods.Head()->data && ValidString(script->mods.Head()->data->name))
+	{
+		esmFileName = script->mods.Head()->data->name;
+	}
+	else if (DataHandler::Get()->activeFile && ValidString(DataHandler::Get()->activeFile->name))
+	{
+		esmFileName = DataHandler::Get()->activeFile->name;
+	}
+	else
+	{
+		GeckExtenderMessageLog("Failed to get name of mod");
+		return;
+	}
 	SocketClient client("127.0.0.1", g_nvsePort);
 	ScriptTransferObject scriptTransferObject;
 	scriptTransferObject.scriptRefID = script->refID & 0x00FFFFFF;
 	scriptTransferObject.dataLength = script->info.dataLength;
-	scriptTransferObject.nameLength = strlen(activeFile->name);
+	scriptTransferObject.nameLength = strlen(esmFileName);
 	scriptTransferObject.numVars = script->GetVarCount();
 	scriptTransferObject.numRefs = script->GetRefCount();
 	scriptTransferObject.type = script->info.type;
 	client.SendData(scriptTransferObject);
-	client.SendData(activeFile->name, scriptTransferObject.nameLength);
+	client.SendData(esmFileName, scriptTransferObject.nameLength);
 	client.SendData(static_cast<char*>(script->data), script->info.dataLength);
 	auto* varNode = &script->varList;
 	while (varNode)

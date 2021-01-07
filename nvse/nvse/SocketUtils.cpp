@@ -13,6 +13,7 @@ std::string GetLastErrorString()
 	std::string str(ws.begin(), ws.end());
 	LocalFree(s);
 	str.pop_back(); // remove \n
+	str.pop_back(); // remove \r
 	return str;
 }
 

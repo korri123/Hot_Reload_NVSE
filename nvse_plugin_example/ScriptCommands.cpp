@@ -37,4 +37,5 @@ bool Cmd_ToGeck_Execute(COMMAND_ARGS)
 		Console_Print("Failed to communicate with the GECK!");
 		Console_Print(e.what());
 	}
+	return true;
 }
