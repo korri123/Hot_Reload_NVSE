@@ -30,11 +30,22 @@ enum {
 	eListInvalid = -1,		
 };
 
+#if !_DEBUG
 typedef void * (* _FormHeap_Allocate)(UInt32 size);
 extern const _FormHeap_Allocate FormHeap_Allocate;
 
 typedef void (* _FormHeap_Free)(void * ptr);
 extern const _FormHeap_Free FormHeap_Free;
+#else
+typedef void* (*_FormHeap_Allocate)(UInt32 size);
+extern const _FormHeap_Allocate FormHeap_Allocate_;
+
+typedef void (*_FormHeap_Free)(void* ptr);
+extern const _FormHeap_Free FormHeap_Free_;
+
+void* FormHeap_Allocate(UInt32 size);
+void FormHeap_Free(void* ptr);
+#endif
 
 #if RUNTIME
 TESForm* __stdcall LookupFormByID(UInt32 refID);
@@ -370,14 +381,21 @@ public:
 	void DeleteAll() const
 	{
 		_Node* nextNode = Head(), * currNode = nextNode->next;
-		FormHeap_Free(nextNode->data);
-		nextNode->data = NULL;
+		if (nextNode->data)
+		{
+			nextNode->data->~Item();
+			FormHeap_Free(nextNode->data);
+			nextNode->data = NULL;
+		}
 		nextNode->next = NULL;
 		while (currNode)
 		{
 			nextNode = currNode->next;
-			currNode->data->~Item();
-			FormHeap_Free(currNode->data);
+			if (currNode->data)
+			{
+				currNode->data->~Item();
+				FormHeap_Free(currNode->data);
+			}
 			FormHeap_Free(currNode);
 			currNode = nextNode;
 		}

@@ -82,7 +82,7 @@ bool HandleScriptVarChanges(Script* script, const std::vector<VarInfoObject>& ve
 	tList<VariableInfo> newVars{};
 	for (const auto& editorVar : vec)
 	{
-		auto* newVar = static_cast<VariableInfo*>(GameHeapAlloc(sizeof(VariableInfo)));
+		auto* newVar = static_cast<VariableInfo*>(FormHeap_Allocate(sizeof(VariableInfo)));
 		auto* gameVar = script->varList.GetVariableByName(editorVar.name.c_str());
 		newVar->idx = editorVar.idx;
 		if (gameVar)
@@ -105,7 +105,7 @@ bool HandleRefListChanges(Script* script, const std::vector<RefInfoObject>& vec)
 	tList<Script::RefVariable> newRefs{};
 	for (const auto& editorRef : vec)
 	{
-		auto* ref = static_cast<Script::RefVariable*>(GameHeapAlloc(sizeof(Script::RefVariable)));
+		auto* ref = static_cast<Script::RefVariable*>(FormHeap_Allocate(sizeof(Script::RefVariable)));
 		if (editorRef.formId && !editorRef.varIdx)
 		{
 			UInt32 refId;
@@ -163,6 +163,7 @@ public:
 	~ReloadedScript()
 	{
 		oldVarList->DeleteAll();
+		FormHeap_Free(oldVarList);
 	}
 };
 
@@ -171,7 +172,7 @@ std::unordered_set<ScriptEventList*> g_handledEventLists;
 
 tList<VariableInfo>* GetVarList(Script* script)
 {
-	auto* newList = static_cast<tList<VariableInfo>*>(GameHeapAlloc(sizeof(tList<VariableInfo>)));
+	auto* newList = static_cast<tList<VariableInfo>*>(FormHeap_Allocate(sizeof(tList<VariableInfo>)));
 	*newList = *reinterpret_cast<tList<VariableInfo>*>(&script->varList);
 	return newList;
 }
@@ -225,7 +226,7 @@ void HandleHotReload()
 	const auto* modInfo = DataHandler::Get()->LookupModByName(modName.c_str());
 	if (!modInfo)
 	{
-		QueueErrorMessage("Mod name %s is not loaded in-game");
+		QueueErrorMessage("Mod name %s is not loaded in-game", modName.c_str());
 		return;
 	}
 	const auto refId = obj.scriptRefID + (modInfo->modIndex << 24);
@@ -252,12 +253,13 @@ void HandleHotReload()
 			return;
 		if (!HandleScriptVarChanges(script, varInfos))
 			return;
+		
 
 		auto* oldDataPtr = script->data;
-		auto* newData = GameHeapAlloc(obj.dataLength);
+		auto* newData = FormHeap_Allocate(obj.dataLength);
 		std::memcpy(newData, scriptData.data(), obj.dataLength);
 		script->data = newData;
-		GameHeapFree(oldDataPtr);
+		FormHeap_Free(oldDataPtr);
 		script->info.dataLength = obj.dataLength;
 		script->info.varCount = obj.numVars;
 		script->info.numRefs = obj.numRefs;
@@ -298,14 +300,14 @@ void __fastcall HandleScriptEventListChange(ScriptRunner* runner, Script* script
 		return;
 	if (g_handledEventLists.find(runner->eventList) != g_handledEventLists.end())
 		return;
-	auto* newEventListVars = static_cast<tList<ScriptEventList::Var>*>(GameHeapAlloc(
+	auto* newEventListVars = static_cast<tList<ScriptEventList::Var>*>(FormHeap_Allocate(
 		sizeof(tList<ScriptEventList::Var>)));
 	*newEventListVars = tList<ScriptEventList::Var>();
 	auto& oldScriptVarInfos = *reloadScriptIter->second.oldVarList;
 	auto& newScriptVarInfos = *reinterpret_cast<tList<VariableInfo>*>(&script->varList);
 	for (auto iter = newScriptVarInfos.Begin(); !iter.End(); ++iter)
 	{
-		auto* newEventListVar = static_cast<ScriptEventList::Var*>(GameHeapAlloc(sizeof(ScriptEventList::Var)));
+		auto* newEventListVar = static_cast<ScriptEventList::Var*>(FormHeap_Allocate(sizeof(ScriptEventList::Var)));
 		newEventListVar->id = iter->idx;
 		newEventListVar->nextEntry = nullptr;
 		newEventListVar->data = 0;
@@ -330,6 +332,7 @@ void __fastcall HandleScriptEventListChange(ScriptRunner* runner, Script* script
 	}
 	auto* oldEventListVars = reinterpret_cast<tList<ScriptEventList::Var>*>(runner->eventList->m_vars);
 	oldEventListVars->DeleteAll();
+	FormHeap_Free(oldEventListVars);
 	runner->eventList->m_vars = reinterpret_cast<ScriptEventList::VarEntry*>(newEventListVars);
 	g_handledEventLists.insert(runner->eventList);
 }

@@ -1,4 +1,9 @@
 #include "GameAPI.h"
+
+#include <atomic>
+#include <set>
+
+
 #include "GameRTTI.h"
 #include "GameForms.h"
 #include "GameObjects.h"
@@ -35,9 +40,55 @@ TESForm* __stdcall LookupFormByID(UInt32 refID)
 
 const _ExtractArgs ExtractArgs = (_ExtractArgs)0x005ACCB0;
 
+#if !_DEBUG
 const _FormHeap_Allocate FormHeap_Allocate = (_FormHeap_Allocate)0x00401000;
-const _FormHeap_Free FormHeap_Free = (_FormHeap_Free)0x00401030;
 
+const _FormHeap_Free FormHeap_Free = (_FormHeap_Free)0x00401030;
+#else
+const _FormHeap_Allocate FormHeap_Allocate_ = (_FormHeap_Allocate)0x00401000;
+
+const _FormHeap_Free FormHeap_Free_ = (_FormHeap_Free)0x00401030;
+
+int allocated = 0;
+std::unordered_map<void*, UInt32> s_sizeMap;
+ICriticalSection debug_cs;
+
+struct MemLeakDebugInfo
+{
+	std::vector<UInt32> stack;
+};
+
+std::unordered_map<void*, std::tuple<UInt32, MemLeakDebugInfo>> ptrs;
+
+void* FormHeap_Allocate(UInt32 size)
+{
+	ScopedLock s(debug_cs);
+	allocated += size;
+	auto* ptr = FormHeap_Allocate_(size);
+	s_sizeMap[ptr] = size;
+	
+	UInt32 trace[6] = { 0 };
+	CaptureStackBackTrace(0, 6, reinterpret_cast<PVOID*>(trace), nullptr);
+	const std::vector<UInt32> vecTrace(trace, trace + 6);
+	MemLeakDebugInfo info{ vecTrace };
+	ptrs.emplace(ptr, std::make_tuple(size, info));
+	return ptr;
+}
+
+void FormHeap_Free(void* ptr)
+{
+	ScopedLock s(debug_cs);
+	allocated -= s_sizeMap[ptr];
+	if (s_sizeMap[ptr])
+	{
+		ptrs.erase(ptr);
+	}
+	FormHeap_Free_(ptr);
+}
+
+
+
+#endif
 const _CreateFormInstance CreateFormInstance = (_CreateFormInstance)0x00465110;
 
 const _GetSingleton ConsoleManager_GetSingleton = (_GetSingleton)0x0071B160;
