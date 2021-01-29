@@ -30,7 +30,7 @@ enum {
 	eListInvalid = -1,		
 };
 
-#if !_DEBUG
+#if !0
 typedef void * (* _FormHeap_Allocate)(UInt32 size);
 extern const _FormHeap_Allocate FormHeap_Allocate;
 

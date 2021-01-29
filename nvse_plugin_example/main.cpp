@@ -3,6 +3,9 @@
 #include "nvse/PluginAPI.h"
 #include "PluginAPI.h"
 #include "ScriptCommands.h"
+#if EDITOR
+#include "CompileScriptFromFile.h"
+#endif
 
 #if RUNTIME
 IDebugLog gLog("hot_reload.log");
@@ -114,6 +117,7 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 #else
 	InitializeHotReloadEditor();
 	StartGeckServer();
+	InitializeCompileFromFile();
 #endif
 	_MESSAGE("Successfully loaded");
 	return true;

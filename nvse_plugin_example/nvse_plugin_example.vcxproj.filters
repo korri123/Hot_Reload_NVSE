@@ -4,6 +4,9 @@
     <Filter Include="nvse">
       <UniqueIdentifier>{92a4f350-f2ec-4fca-bdd3-927732d91b34}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{f88c8c75-517d-4ab2-b2f5-d2b433886211}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\nvse\nvse\GameAPI.cpp">
@@ -69,6 +72,7 @@
     <ClCompile Include="HotReloadEditor.cpp" />
     <ClCompile Include="ScriptCommands.cpp" />
     <ClCompile Include="OpenInGeckEditor.cpp" />
+    <ClCompile Include="CompileScriptFromFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvse\nvse\GameAPI.h">
@@ -128,6 +132,7 @@
     <ClInclude Include="ScriptCommands.h" />
     <ClInclude Include="HotReload.h" />
     <ClInclude Include="OpenInGeck.h" />
+    <ClInclude Include="CompileScriptFromFile.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

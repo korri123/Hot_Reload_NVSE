@@ -728,3 +728,19 @@ void GeckExtenderMessageLog(const char* fmt, ...)
 	// Extender handles freeing buffer
 	SendMessage(window, 0x8004, 0, reinterpret_cast<LPARAM>(buffer));
 }
+
+std::string GetLastErrorString()
+{
+	wchar_t* s = NULL;
+	FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, WSAGetLastError(),
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPWSTR)&s, 0, NULL);
+	fprintf(stderr, "%S\n", s);
+	std::wstring ws(s);
+	std::string str(ws.begin(), ws.end());
+	LocalFree(s);
+	str.pop_back(); // remove \n
+	str.pop_back(); // remove \r
+	return str;
+}

@@ -163,7 +163,9 @@ public:
 // thread-safe template versions of ThisStdCall()
 
 template <typename T_Ret = UInt32, typename ...Args>
-__forceinline T_Ret ThisStdCall(UInt32 _addr, const void *_this, Args ...args)
+__forceinline T_Ret 
+
+ThisStdCall(UInt32 _addr, const void *_this, Args ...args)
 {
 	return ((T_Ret (__thiscall *)(const void*, Args...))_addr)(_this, std::forward<Args>(args)...);
 }
@@ -214,3 +216,20 @@ inline void GameHeapFree(void* ptr)
 std::string FormatString(const char* fmt, ...);
 
 void GeckExtenderMessageLog(const char* fmt, ...);
+
+std::string GetLastErrorString();
+
+inline bool ends_with(std::string const& value, std::string const& ending)
+{
+	if (ending.size() > value.size()) return false;
+	return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+inline std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+	}
+	return str;
+}

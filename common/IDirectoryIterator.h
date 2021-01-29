@@ -10,6 +10,7 @@ public:
 	WIN32_FIND_DATA *	Get(void)	{ return &m_result; }
 	void		GetFullPath(char * out, UInt32 outLen);
 	std::string	GetFullPath(void);
+	std::string	GetFileName(void);
 
 	void	Next(void);
 	bool	Done(void);

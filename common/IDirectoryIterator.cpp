@@ -32,6 +32,11 @@ std::string IDirectoryIterator::GetFullPath(void)
 	return std::string(m_path) + "\\" + std::string(m_result.cFileName);
 }
 
+std::string IDirectoryIterator::GetFileName(void)
+{
+	return std::string(m_result.cFileName);
+}
+
 void IDirectoryIterator::Next(void)
 {
 	BOOL	result = FindNextFile(m_searchHandle, &m_result);
