@@ -51,11 +51,15 @@ void FileWatchThread(int dummy)
 							std::stringstream buffer;
 							buffer << t.rdbuf();
 							auto str = buffer.str();
+							str = ReplaceAll(str, "\r\n", "\n"); // lol
 							str = ReplaceAll(str, "\n", "\r\n");
-							FormHeap_Free(script->text);
-							script->text = static_cast<char*>(FormHeap_Allocate(str.size() + 1));
-							strcpy_s(script->text, str.size() + 1, str.c_str());
-							GeckFuncs::CompileScript(g_scriptContext, script, 0);
+							if (_stricmp(str.c_str(), script->text) != 0)
+							{
+								FormHeap_Free(script->text);
+								script->text = static_cast<char*>(FormHeap_Allocate(str.size() + 1));
+								strcpy_s(script->text, str.size() + 1, str.c_str());
+								GeckFuncs::CompileScript(g_scriptContext, script, 0);
+							}
 						}
 					}
 				}
@@ -66,7 +70,7 @@ void FileWatchThread(int dummy)
 	}
 	catch (std::exception& e)
 	{
-		_MESSAGE("Compile from file error: %s (%s)", e.what(), GetLastErrorString().c_str());
+		GeckExtenderMessageLog("Compile from file error: %s (%s)", e.what(), GetLastErrorString().c_str());
 	}
 }
 
