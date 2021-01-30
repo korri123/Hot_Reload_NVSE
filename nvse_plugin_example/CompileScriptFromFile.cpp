@@ -7,6 +7,7 @@
 #include "GameRTTI.h"
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 std::string GetWorkingDir()
 {
@@ -26,7 +27,7 @@ void FileWatchThread(int dummy)
 {
 	try
 	{
-		auto* handle = FindFirstChangeNotification(GetWorkingDir().c_str(), false, FILE_NOTIFY_CHANGE_LAST_WRITE);
+		auto* handle = FindFirstChangeNotification(GetWorkingDir().c_str(), true, FILE_NOTIFY_CHANGE_LAST_WRITE);
 		while (true)
 		{
 			if (handle == INVALID_HANDLE_VALUE || !handle)
@@ -34,10 +35,9 @@ void FileWatchThread(int dummy)
 			const auto waitStatus = WaitForSingleObject(handle, INFINITE);
 			if (waitStatus == WAIT_FAILED)
 				throw std::exception("Failed to wait");
-
-			for (IDirectoryIterator iter("Data\\Scripts"); !iter.Done(); iter.Next())
+			for (std::filesystem::recursive_directory_iterator next(std::filesystem::path(GetWorkingDir().c_str())), end; next != end; ++next)
 			{
-				auto fileName = iter.GetFileName();
+				auto fileName = next->path().filename().string();
 				if (ends_with(fileName, ".gek"))
 				{
 					auto scriptName = fileName.substr(0, fileName.size() - 4);
@@ -47,7 +47,7 @@ void FileWatchThread(int dummy)
 						auto* script = DYNAMIC_CAST(form, TESForm, Script);
 						if (script)
 						{
-							std::ifstream t(iter.GetFullPath());
+							std::ifstream t(next->path());
 							std::stringstream buffer;
 							buffer << t.rdbuf();
 							auto str = buffer.str();
