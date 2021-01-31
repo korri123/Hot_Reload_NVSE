@@ -28,11 +28,11 @@ extern UInt32 s_CheckInsideOnActorEquipHook;
 
 void Console_Print(const char * fmt, ...);
 
-//typedef void * (* _FormHeap_Allocate)(UInt32 size);
-//extern const _FormHeap_Allocate FormHeap_Allocate;
+typedef void * (* _FormHeap_Allocate)(UInt32 size);
+extern const _FormHeap_Allocate FormHeap_Allocate;
 //
-//typedef void (* _FormHeap_Free)(void * ptr);
-//extern const _FormHeap_Free FormHeap_Free;
+typedef void (* _FormHeap_Free)(void * ptr);
+extern const _FormHeap_Free FormHeap_Free;
 
 #if RUNTIME
 

@@ -4,6 +4,7 @@
 #include "Utilities.h"
 #include "NiTypes.h"
 
+
 // 8
 class String
 {
@@ -30,22 +31,13 @@ enum {
 	eListInvalid = -1,		
 };
 
-#if !0
-typedef void * (* _FormHeap_Allocate)(UInt32 size);
+
+typedef void* (*_FormHeap_Allocate)(UInt32 size);
 extern const _FormHeap_Allocate FormHeap_Allocate;
 
-typedef void (* _FormHeap_Free)(void * ptr);
-extern const _FormHeap_Free FormHeap_Free;
-#else
-typedef void* (*_FormHeap_Allocate)(UInt32 size);
-extern const _FormHeap_Allocate FormHeap_Allocate_;
-
 typedef void (*_FormHeap_Free)(void* ptr);
-extern const _FormHeap_Free FormHeap_Free_;
+extern const _FormHeap_Free FormHeap_Free;
 
-void* FormHeap_Allocate(UInt32 size);
-void FormHeap_Free(void* ptr);
-#endif
 
 #if RUNTIME
 TESForm* __stdcall LookupFormByID(UInt32 refID);

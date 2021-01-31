@@ -45,10 +45,11 @@ const _FormHeap_Allocate FormHeap_Allocate = (_FormHeap_Allocate)0x00401000;
 
 const _FormHeap_Free FormHeap_Free = (_FormHeap_Free)0x00401030;
 #else
-const _FormHeap_Allocate FormHeap_Allocate_ = (_FormHeap_Allocate)0x00401000;
+const _FormHeap_Allocate FormHeap_Allocate = (_FormHeap_Allocate)0x00401000;
 
-const _FormHeap_Free FormHeap_Free_ = (_FormHeap_Free)0x00401030;
+const _FormHeap_Free FormHeap_Free = (_FormHeap_Free)0x00401030;
 
+#if 0
 int allocated = 0;
 std::unordered_map<void*, UInt32> s_sizeMap;
 ICriticalSection debug_cs;
@@ -86,7 +87,7 @@ void FormHeap_Free(void* ptr)
 	FormHeap_Free_(ptr);
 }
 
-
+#endif
 
 #endif
 const _CreateFormInstance CreateFormInstance = (_CreateFormInstance)0x00465110;

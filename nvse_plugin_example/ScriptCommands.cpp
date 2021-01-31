@@ -20,17 +20,30 @@ bool Cmd_GetGameHotReloaded_Execute(COMMAND_ARGS)
 
 bool Cmd_ToGeck_Execute(COMMAND_ARGS)
 {
-	if (!thisObj)
+	TESForm* form = nullptr;
+	bool success = false;
+	if (ExtractArgs(EXTRACT_ARGS, &form))
+		success = true;
+	if (!thisObj && !form || !success)
 	{
-		Console_Print("Reference missing");
+		Console_Print("Reference or base form missing");
 		return true;
 	}
 
+	if (!form)
+		form = thisObj;
+
+	if (form->GetModIndex() == 0xFF)
+	{
+		Console_Print("ToGECK: ref %X is dynamically placed; sending base form instead...", form->refID);
+		form = form->TryGetREFRParent();
+	}
+	
 	try
 	{
 		SocketClient client("127.0.0.1", g_geckPort);
 		client.SendData(GeckTransferObject(TransferType::kOpenRef));
-		client.SendData(GeckOpenRefTransferObject(thisObj->refID));
+		client.SendData(GeckOpenRefTransferObject(form->refID));
 	}
 	catch (const SocketException& e)
 	{
