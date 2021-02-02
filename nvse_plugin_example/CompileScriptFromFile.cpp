@@ -9,13 +9,6 @@
 #include <sstream>
 #include <filesystem>
 
-std::string GetWorkingDir()
-{
-	char path[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, path);
-	return std::string(path) + "\\Data\\Scripts";
-}
-
 namespace GeckFuncs
 {
 	auto CompileScript = reinterpret_cast<void(__thiscall*)(void*, Script*, int)>(0x5C9800);
@@ -27,15 +20,15 @@ void FileWatchThread(int dummy)
 {
 	try
 	{
-		auto* handle = FindFirstChangeNotification(GetWorkingDir().c_str(), true, FILE_NOTIFY_CHANGE_LAST_WRITE);
+		auto* handle = FindFirstChangeNotification(GetScriptsDir().c_str(), true, FILE_NOTIFY_CHANGE_LAST_WRITE);
 		while (true)
 		{
 			if (handle == INVALID_HANDLE_VALUE || !handle)
-				throw std::exception(FormatString("Could not find directory %s", GetWorkingDir().c_str()).c_str());
+				throw std::exception(FormatString("Could not find directory %s", GetScriptsDir().c_str()).c_str());
 			const auto waitStatus = WaitForSingleObject(handle, INFINITE);
 			if (waitStatus == WAIT_FAILED)
 				throw std::exception("Failed to wait");
-			for (std::filesystem::recursive_directory_iterator next(std::filesystem::path(GetWorkingDir().c_str())), end; next != end; ++next)
+			for (std::filesystem::recursive_directory_iterator next(std::filesystem::path(GetScriptsDir().c_str())), end; next != end; ++next)
 			{
 				auto fileName = next->path().filename().string();
 				if (ends_with(fileName, ".gek"))
