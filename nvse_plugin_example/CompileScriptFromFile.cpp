@@ -31,9 +31,13 @@ void FileWatchThread(int dummy)
 			for (std::filesystem::recursive_directory_iterator next(std::filesystem::path(GetScriptsDir().c_str())), end; next != end; ++next)
 			{
 				auto fileName = next->path().filename().string();
+				std::string scriptName;
 				if (ends_with(fileName, ".gek"))
+					scriptName = fileName.substr(0, fileName.size() - 4);
+				else if (ends_with(fileName, ".geck"))
+					scriptName = fileName.substr(0, fileName.size() - 5);
+				if (!scriptName.empty())
 				{
-					auto scriptName = fileName.substr(0, fileName.size() - 4);
 					auto* form = GetFormByID(scriptName.c_str());
 					if (form)
 					{
