@@ -5,7 +5,10 @@
 
 #include "GameData.h"
 #include "HotReload.h"
-#include "ScriptTokenCache.h"
+#include <filesystem>
+
+#include "CreateScriptFiles.h"
+#include <intrin.h>
 
 typedef void (__cdecl* _EditorLog)(ScriptBuffer* Buffer, const char* format, ...);
 const _EditorLog EditorLog = reinterpret_cast<_EditorLog>(0x5C5730);
@@ -103,8 +106,12 @@ std::thread g_hotReloadClientThread;
 
 void __fastcall SendHotReloadDataHook(Script* script)
 {
+	auto* retAddr = _ReturnAddress();
+	auto* addrOfRetAddr = _AddressOfReturnAddress();
 	g_hotReloadClientThread = std::thread(SendHotReloadData, script);
 	g_hotReloadClientThread.detach();
+
+	CreateScriptFiles();
 }
 
 __declspec(naked) void Hook_HotReload()

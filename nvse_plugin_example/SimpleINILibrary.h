@@ -1160,7 +1160,7 @@ public:
     int GetOrCreate(const char* sectionName, const char* keyName, int defaultValue, const char* comment);
     long GetOrCreateHex(char* sectionName, char* keyName, long defaultValue, char* comment);
     float GetOrCreate(char* sectionName, char* keyName, double defaultValue, char* comment);
-    const char* GetOrCreate(char* sectionName, char* keyName, char* defaultValue, char* comment);
+    const char* GetOrCreate(const char* sectionName, const char* keyName, const char* defaultValue, const char* comment);
 
 private:
     // copying is not permitted
@@ -1587,7 +1587,7 @@ _declspec(noinline) float CSimpleIniTempl<SI_CHAR, SI_STRLESS, SI_CONVERTER>::Ge
 }
 
 template<class SI_CHAR, class SI_STRLESS, class SI_CONVERTER>
-_declspec(noinline) const char* CSimpleIniTempl<SI_CHAR, SI_STRLESS, SI_CONVERTER>::GetOrCreate(char* sectionName, char* keyName, char* defaultValue, char* comment)
+_declspec(noinline) const char* CSimpleIniTempl<SI_CHAR, SI_STRLESS, SI_CONVERTER>::GetOrCreate(const char* sectionName, const char* keyName, const char* defaultValue, const char* comment)
 {
     const char* settingValue = this->GetValue(sectionName, keyName, NULL);
     if (settingValue == NULL) {

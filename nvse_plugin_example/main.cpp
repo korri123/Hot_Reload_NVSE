@@ -1,4 +1,4 @@
-#include "HotReload.h"
+ #include "HotReload.h"
 #include "OpenInGeck.h"
 #include "nvse/PluginAPI.h"
 #include "PluginAPI.h"
@@ -98,6 +98,10 @@ void PatchLockFiles()
 #endif
 }
 
+bool g_enableCreateFiles = true;
+std::string g_createFileExtension = "gek";
+
+
 bool NVSEPlugin_Load(const NVSEInterface* nvse)
 {
 	const auto iniPath = GetCurPath() + R"(\Data\NVSE\Plugins\hot_reload.ini)";
@@ -110,6 +114,8 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	const auto enableTextEditor = ini.GetOrCreate("General", "bTextEditorSupport", 1, "; Enable external text editor compile-on-save support for scripts");
 	const auto enableToGeck = ini.GetOrCreate("General", "bToGeck", 1, "; Enable ToGECK command that allows you to quickly send a ref or form to GECK from console");
 	const auto enableSaveWhileGameOpen = ini.GetOrCreate("General", "bAllowSavingWhileGameIsOpen", 1, "; Allow GECK to save files while game is open");
+	g_enableCreateFiles = ini.GetOrCreate("General", "bSynchronizeScriptsWithFiles", 1, "; Create text files inside Scripts\\ folder for every script of a mod once you save a script in that mod and updates the scripts in file when you edit them in GECK.\n; Enables automatic synchronization between GECK and script files.");
+	g_createFileExtension = ini.GetOrCreate("General", "bCreateFilesFileExtension", "gek", "; File extension of automatically generated files from scripts inside mod");
 
 	ini.SaveFile(iniPath.c_str(), false);
 	
@@ -153,7 +159,9 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	if (enableToGeck)
 		StartGeckServer();
 	if (enableTextEditor)
+	{
 		InitializeCompileFromFile();
+	}
 #endif
 	if (enableSaveWhileGameOpen)
 		PatchLockFiles();

@@ -73,6 +73,7 @@
     <ClCompile Include="ScriptCommands.cpp" />
     <ClCompile Include="OpenInGeckEditor.cpp" />
     <ClCompile Include="CompileScriptFromFile.cpp" />
+    <ClCompile Include="CreateScriptFiles.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvse\nvse\GameAPI.h">
@@ -135,6 +136,7 @@
     <ClInclude Include="CompileScriptFromFile.h" />
     <ClInclude Include="SimpleINILibrary.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="CreateScriptFiles.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

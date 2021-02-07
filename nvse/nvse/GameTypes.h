@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <list>
 #include "Utilities.h"
 #include "NiTypes.h"
@@ -501,6 +502,16 @@ public:
 			curr = curr->next;
 		} while (curr);
 		return -1;
+	}
+
+	bool Contains(std::function<bool(Item&)> func) const
+	{
+		for (auto iter = Begin(); !iter.End(); ++iter)
+		{
+			if (*iter && func(**iter))
+				return true;
+		}
+		return false;
 	}
 };
 STATIC_ASSERT(sizeof(tList<void*>) == 0x8);

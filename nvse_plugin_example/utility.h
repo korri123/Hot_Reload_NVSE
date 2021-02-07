@@ -1,4 +1,5 @@
 #pragma once
+#include "Utilities.h"
 #include <string>
 
 inline std::string GetCurPath()
@@ -11,4 +12,12 @@ inline std::string GetCurPath()
 inline std::string GetScriptsDir()
 {
 	return GetCurPath() + "\\Data\\Scripts";
+}
+
+inline void Log(const std::string& s, bool warn=false)
+{
+	auto str = "HOT RELOAD: " + s;
+	GeckExtenderMessageLog(str.c_str());
+	if (warn)
+		ShowErrorMessageBox(str.c_str());
 }
