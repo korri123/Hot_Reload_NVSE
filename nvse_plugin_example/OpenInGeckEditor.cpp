@@ -83,8 +83,12 @@ void GeckThread(int _)
 	}
 	catch (const SocketException& e)
 	{
-		ShowErrorMessageBox("GECK hot reload server failed! Check hot_reload.log for info");
-		_MESSAGE("Error: %s", e.what());
+		Log("ToGECK server failed! Check hot_reload.log for info", true);
+		Log(FormatString("Error: %s", e.what()));
+	}
+	catch (...)
+	{
+		Log("Critical error in OpenInGeckEditor.cpp, please open a bug report on how this happened", true);
 	}
 }
 

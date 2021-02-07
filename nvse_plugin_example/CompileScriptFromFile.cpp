@@ -100,6 +100,10 @@ void FileWatchThread(int dummy)
 	{
 		GeckExtenderMessageLog("Compile from file error: %s (%s)", e.what(), GetLastErrorString().c_str());
 	}
+	catch (...)
+	{
+		Log("Error in CompileScriptFromFile.cpp, please open a bug report on how this happened", true);
+	}
 }
 
 

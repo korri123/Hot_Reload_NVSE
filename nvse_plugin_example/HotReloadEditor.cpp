@@ -79,13 +79,13 @@ void SendHotReloadData(Script* script)
 	if (!script)
 	{
 		GeckExtenderMessageLog("Script was null!");
+		return;
 	}
 	try
 	{
 		DoSendHotReloadData(script);
-
 		const auto* scriptName = script->editorData.editorID.CStr();
-		if (scriptName && strlen(scriptName))
+		if (ValidString(scriptName))
 		{
 			GeckExtenderMessageLog("Hot reloaded script '%s'", scriptName);
 		}
@@ -100,18 +100,24 @@ void SendHotReloadData(Script* script)
 		if (e.m_errno != 10061) // game isn't open
 			GeckExtenderMessageLog("Hot reload error: %s", e.what());
 	}
+	catch (...)
+	{
+		Log("Critical error in HotReloadEditor.cpp, please open a bug report on how this happened", true);
+	}
+	
+
 }
 
 std::thread g_hotReloadClientThread;
 
 void __fastcall SendHotReloadDataHook(Script* script)
 {
-	auto* retAddr = _ReturnAddress();
-	auto* addrOfRetAddr = _AddressOfReturnAddress();
-	g_hotReloadClientThread = std::thread(SendHotReloadData, script);
-	g_hotReloadClientThread.detach();
-
-	CreateScriptFiles();
+	if (LookupFormByID(script->refID)) // ignore temp scripts
+	{
+		g_hotReloadClientThread = std::thread(SendHotReloadData, script);
+		g_hotReloadClientThread.detach();
+		CreateScriptFiles();
+	}
 }
 
 __declspec(naked) void Hook_HotReload()

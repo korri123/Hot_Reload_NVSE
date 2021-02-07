@@ -30,6 +30,8 @@ void CreateFilesThread(void* _)
 	{
 		g_updateFromFile = true;
 		auto* activeMod = DataHandler::Get()->activeFile;
+		if (!activeMod)
+			throw std::exception("Failed to get active mod");
 		std::vector<Script*> scripts;
 		for (auto iter = DataHandler::Get()->scriptList.Begin(); !iter.End(); ++iter)
 		{
@@ -72,7 +74,11 @@ void CreateFilesThread(void* _)
 	}
 	catch (std::exception& e)
 	{
-		Log("Error: %s", e.what());
+		Log(FormatString("Error: %s", e.what()), false);
+	}
+	catch (...)
+	{
+		Log("Error in CreateScriptFiles.cpp, please open a bug report on how this happened", true);
 	}
 	
 }
