@@ -1,4 +1,4 @@
- #include "HotReload.h"
+#include "HotReload.h"
 #include "OpenInGeck.h"
 #include "nvse/PluginAPI.h"
 #include "PluginAPI.h"
@@ -100,6 +100,7 @@ void PatchLockFiles()
 
 bool g_enableCreateFiles = true;
 std::string g_createFileExtension = "gek";
+std::string g_scriptsFolder = "\\Scripts";
 
 
 bool NVSEPlugin_Load(const NVSEInterface* nvse)
@@ -115,8 +116,14 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	const auto enableToGeck = ini.GetOrCreate("General", "bToGeck", 1, "; Enable ToGECK command that allows you to quickly send a ref or form to GECK from console");
 	const auto enableSaveWhileGameOpen = ini.GetOrCreate("General", "bAllowSavingWhileGameIsOpen", 1, "; Allow GECK to save files while game is open");
 	g_enableCreateFiles = ini.GetOrCreate("General", "bSynchronizeScriptsWithFiles", 1, "; Create text files inside Scripts\\ folder for every script of a mod once you save a script in that mod and updates the scripts in file when you edit them in GECK.\n; Enables automatic synchronization between GECK and script files.");
-	g_createFileExtension = ini.GetOrCreate("General", "bCreateFilesFileExtension", "gek", "; File extension of automatically generated files from scripts inside mod");
-
+	g_createFileExtension = ini.GetOrCreate("General", "sCreateFilesFileExtension", "gek", "; File extension of automatically generated files from scripts inside mod");
+	g_scriptsFolder = ini.GetOrCreate("General", "sScriptsFolderPath", "Scripts", "; Path to Scripts folder (relative to base Fallout New Vegas directory) used for text editor feature");
+	g_scriptsFolder = ReplaceAll(g_scriptsFolder, "/", "\\");
+	if (g_scriptsFolder.empty())
+		g_scriptsFolder = "\\Scripts";
+	if (g_scriptsFolder.at(0) != '\\')
+		g_scriptsFolder = '\\' + g_scriptsFolder;
+	
 	ini.SaveFile(iniPath.c_str(), false);
 	
 #if RUNTIME

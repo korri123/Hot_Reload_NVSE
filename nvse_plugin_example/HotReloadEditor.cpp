@@ -78,7 +78,7 @@ void SendHotReloadData(Script* script)
 {
 	if (!script)
 	{
-		GeckExtenderMessageLog("Script was null!");
+		Log("Script was null!");
 		return;
 	}
 	try
@@ -87,11 +87,11 @@ void SendHotReloadData(Script* script)
 		const auto* scriptName = script->editorData.editorID.CStr();
 		if (ValidString(scriptName))
 		{
-			GeckExtenderMessageLog("Hot reloaded script '%s'", scriptName);
+			Log(FormatString("Hotloaded script '%s'", scriptName));
 		}
 		else
 		{
-			GeckExtenderMessageLog("Hot reloaded script");
+			Log("Hotloaded script");
 		}
 	}
 	catch (const SocketException& e)

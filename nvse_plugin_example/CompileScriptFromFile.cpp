@@ -88,6 +88,7 @@ void FileWatchThread(int dummy)
 							script->text = static_cast<char*>(FormHeap_Allocate(str.size() + 1));
 							strcpy_s(script->text, str.size() + 1, str.c_str());
 							GeckFuncs::CompileScript(g_scriptContext, script, 0);
+							Log(FormatString("Compiled script '%s' from path '%s'", script->editorData.editorID.CStr(), path.string().c_str()));
 						}
 					}
 				}
@@ -98,7 +99,7 @@ void FileWatchThread(int dummy)
 	}
 	catch (std::exception& e)
 	{
-		GeckExtenderMessageLog("Compile from file error: %s (%s)", e.what(), GetLastErrorString().c_str());
+		Log(FormatString("Compile from file error: %s (%s)", e.what(), GetLastErrorString().c_str()));
 	}
 	catch (...)
 	{
@@ -115,4 +116,5 @@ void InitializeCompileFromFile()
 	g_fileWatchThread.detach();
 	if (!std::filesystem::exists(GetScriptsDir()))
 		std::filesystem::create_directory(GetScriptsDir());
+	Log("Scripts can now be edited directly from file in folder " + GetScriptsDir());
 }

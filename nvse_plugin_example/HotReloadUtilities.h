@@ -9,10 +9,7 @@ inline std::string GetCurPath()
 	return path;
 }
 
-inline std::string GetScriptsDir()
-{
-	return GetCurPath() + "\\Data\\Scripts";
-}
+std::string GetScriptsDir();
 
 inline void Log(const std::string& s, bool warn=false)
 {
