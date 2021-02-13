@@ -18,3 +18,8 @@ inline void Log(const std::string& s, bool warn=false)
 	if (warn)
 		ShowErrorMessageBox(str.c_str());
 }
+
+inline bool ValidString(const char* str)
+{
+	return str && strlen(str);
+}

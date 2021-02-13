@@ -13,11 +13,6 @@
 typedef void (__cdecl* _EditorLog)(ScriptBuffer* Buffer, const char* format, ...);
 const _EditorLog EditorLog = reinterpret_cast<_EditorLog>(0x5C5730);
 
-bool ValidString(const char* str)
-{
-	return str && strlen(str);
-}
-
 void DoSendHotReloadData(Script* script)
 {
 	const char* esmFileName;
@@ -112,7 +107,7 @@ std::thread g_hotReloadClientThread;
 
 void __fastcall SendHotReloadDataHook(Script* script)
 {
-	if (LookupFormByID(script->refID)) // ignore temp scripts
+	if (LookupFormByID(script->refID) && script->text && _stricmp(script->editorData.editorID.CStr(), "DefaultCompiler") != 0) // ignore temp scripts
 	{
 		g_hotReloadClientThread = std::thread(SendHotReloadData, script);
 		g_hotReloadClientThread.detach();

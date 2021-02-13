@@ -102,9 +102,16 @@ bool g_enableCreateFiles = true;
 std::string g_createFileExtension = "gek";
 std::string g_scriptsFolder = "\\Scripts";
 
+void CrtErrorHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved)
+{
+	Log("Critical error, please create a bug report on Nexus describing how this happened, with a download link to the .esp/.esm you are editing.", true);
+}
 
 bool NVSEPlugin_Load(const NVSEInterface* nvse)
 {
+#if EDITOR
+	_set_invalid_parameter_handler(CrtErrorHandler);
+#endif
 	const auto iniPath = GetCurPath() + R"(\Data\NVSE\Plugins\hot_reload.ini)";
 
 	CSimpleIniA ini;

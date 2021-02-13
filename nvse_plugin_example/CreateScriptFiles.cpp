@@ -35,7 +35,7 @@ void CreateFilesThread(void* _)
 		std::vector<Script*> scripts;
 		for (auto iter = DataHandler::Get()->scriptList.Begin(); !iter.End(); ++iter)
 		{
-			if (iter->mods.Contains([&](ModInfo& item) { return activeMod == &item; }))
+			if (*iter && iter->mods.Contains([&](ModInfo& item) { return activeMod == &item; }) && ValidString(iter->text) && ValidString(iter->editorData.editorID.CStr()))
 			{
 				scripts.push_back(*iter);
 			}
