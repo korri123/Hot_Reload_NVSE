@@ -117,23 +117,27 @@ void __fastcall SendHotReloadDataHook(Script* script)
 
 __declspec(naked) void Hook_HotReload()
 {
-	static UInt32 Script__CopyFromScriptBuffer = 0x5C5100;
-	static UInt32 returnLocation = 0x5C97E0;
+	static UInt32 ScriptContext__CompileScript = 0x5C9800;
+	static UInt32 returnLocation = 0x5C31C0;
 	static Script* script = nullptr;
-	static ScriptBuffer* buffer = nullptr;
 	__asm
 	{
-		mov [script], ecx
-		call Script__CopyFromScriptBuffer
+		mov [script], esi
+		call ScriptContext__CompileScript
+		test al, al
+		jz goBack
 		mov ecx, script
+		push eax
 		call SendHotReloadDataHook
+		pop eax
+	goBack:
 		jmp returnLocation
 	}
 }
 
 void InitializeHotReloadEditor()
 {
-	WriteRelJump(0x5C97DB, UInt32(Hook_HotReload));
+	WriteRelJump(0x5C31BB, UInt32(Hook_HotReload));
 	// Patch useless micro optimization that prevents ref variable names getting loaded
 	PatchMemoryNop(0x5C5150, 6);
 }

@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <set>
 
+#include "HotReload.h"
+
 std::thread g_fileWatchThread;
 
 namespace GeckFuncs
@@ -41,7 +43,7 @@ void FileWatchThread(int dummy)
 			if (!g_updateFromFile)
 			{
 				std::map<Script*, std::filesystem::path> queuedScripts;
-				for (std::filesystem::recursive_directory_iterator next(std::filesystem::path(GetScriptsDir().c_str())), end; next != end; ++next)
+				for (std::filesystem::recursive_directory_iterator next(GetScriptsDir()), end; next != end; ++next)
 				{
 					auto fileName = next->path().filename().string();
 					std::string scriptName;
@@ -88,6 +90,7 @@ void FileWatchThread(int dummy)
 							script->text = static_cast<char*>(FormHeap_Allocate(str.size() + 1));
 							strcpy_s(script->text, str.size() + 1, str.c_str());
 							GeckFuncs::CompileScript(g_scriptContext, script, 0);
+							SendHotReloadDataHook(script); // TODO: use plugin message when nvse 6.07 comes out
 							Log(FormatString("Compiled script '%s' from path '%s'", script->editorData.editorID.CStr(), path.string().c_str()));
 						}
 					}

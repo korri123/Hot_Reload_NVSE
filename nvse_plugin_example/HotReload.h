@@ -49,3 +49,7 @@ const auto g_nvsePort = 12059;
 
 void InitializeHotReloadRuntime();
 void InitializeHotReloadEditor();
+
+#if EDITOR
+void __fastcall SendHotReloadDataHook(Script* script);
+#endif

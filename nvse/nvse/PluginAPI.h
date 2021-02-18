@@ -235,6 +235,8 @@ struct NVSEMessagingInterface
 		kMessage_DeferredInit,
 		kMessage_ClearScriptDataCache,
 		kMessage_MainGameLoop,
+		kMessage_ScriptCompile   // EDITOR: called after successful script compilation in GECK. data: pointer to Script
+
 	};
 
 	UInt32	version;
