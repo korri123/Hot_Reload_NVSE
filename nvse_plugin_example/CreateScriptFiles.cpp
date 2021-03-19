@@ -5,6 +5,9 @@
 #include "GameData.h"
 #include <fstream>
 #include <sstream>
+#include "CreateScriptFiles.h"
+
+#include "SafeWrite.h"
 
 std::thread g_createFilesThread;
 
@@ -24,7 +27,10 @@ void TryAnotherFilePath(std::string& filePath, const char* scriptName)
 	}
 }
 
-void CreateFilesThread(void* _)
+extern bool g_openScriptsFolder;
+
+
+void CreateFilesThread(bool overwrite)
 {
 	try
 	{
@@ -63,13 +69,21 @@ void CreateFilesThread(void* _)
 				ifs.close();
 				if (_stricmp(fileText.c_str(), script->text) != 0)
 				{
+					if (std::filesystem::exists(filePath) && !overwrite)
+						continue;
 					std::ofstream ofs(filePath, std::ios_base::out | std::ios_base::trunc);
 					ofs << ReplaceAll(script->text, "\r\n", "\n");
 					ofs.close();
 				}
 			}
 			if (created)
+			{
 				Log(FormatString("Created %d script files in %s", scripts.size(), path.c_str()));
+			}
+			if (g_openScriptsFolder && !overwrite && std::filesystem::exists(path))
+			{
+				ShellExecute(nullptr, "open", path.c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
+			}
 		}
 	}
 	catch (std::exception& e)
@@ -83,16 +97,42 @@ void CreateFilesThread(void* _)
 	
 }
 
-
 extern bool g_enableCreateFiles;
 
 void CreateScriptFiles()
 {
 	if (g_enableCreateFiles)
 	{
-		g_createFilesThread = std::thread(CreateFilesThread, nullptr);
+		g_createFilesThread = std::thread(CreateFilesThread, true);
 		g_createFilesThread.detach();
 	}
+}
+
+void __stdcall LoadPluginCreateScriptFiles()
+{
+	if (g_enableCreateFiles)
+	{
+		g_createFilesThread = std::thread(CreateFilesThread, false);
+		g_createFilesThread.detach();
+	}
+}
+
+__declspec(naked) void HookPostPluginLoad()
+{
+	static const auto hookedCall = 0x464A90;
+	static const auto returnAddress = 0x445205;
+	__asm
+	{
+		call hookedCall
+		add esp, 8
+		call LoadPluginCreateScriptFiles
+		jmp returnAddress
+	}
+}
+
+void PatchPostPluginLoad()
+{
+	WriteRelJump(0x4451FD, UInt32(HookPostPluginLoad));
 }
 
 

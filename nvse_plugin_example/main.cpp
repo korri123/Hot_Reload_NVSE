@@ -1,3 +1,4 @@
+#include "CreateScriptFiles.h"
 #include "HotReload.h"
 #include "OpenInGeck.h"
 #include "nvse/PluginAPI.h"
@@ -101,6 +102,8 @@ void PatchLockFiles()
 bool g_enableCreateFiles = true;
 std::string g_createFileExtension = "gek";
 std::string g_scriptsFolder = "\\Scripts";
+bool g_saveFileWhenScriptSaved = true;
+bool g_openScriptsFolder = true;
 
 void CrtErrorHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved)
 {
@@ -111,6 +114,7 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 {
 #if EDITOR
 	_set_invalid_parameter_handler(CrtErrorHandler);
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 #endif
 	const auto iniPath = GetCurPath() + R"(\Data\NVSE\Plugins\hot_reload.ini)";
 
@@ -121,10 +125,20 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	const auto enableHotReload = ini.GetOrCreate("General", "bHotReload", 1, "; Enable script hot reload");
 	const auto enableTextEditor = ini.GetOrCreate("General", "bTextEditorSupport", 1, "; Enable external text editor compile-on-save support for scripts");
 	const auto enableToGeck = ini.GetOrCreate("General", "bToGeck", 1, "; Enable ToGECK command that allows you to quickly send a ref or form to GECK from console");
-	const auto enableSaveWhileGameOpen = ini.GetOrCreate("General", "bAllowSavingWhileGameIsOpen", 1, "; Allow GECK to save files while game is open");
+	auto enableSaveWhileGameOpen = ini.GetOrCreate("General", "bAllowSavingWhileGameIsOpen", 1, "; Allow GECK to save files while game is open");
 	g_enableCreateFiles = ini.GetOrCreate("General", "bSynchronizeScriptsWithFiles", 1, "; Create text files inside Scripts\\ folder for every script of a mod once you save a script in that mod and updates the scripts in file when you edit them in GECK.\n; Enables automatic synchronization between GECK and script files.");
 	g_createFileExtension = ini.GetOrCreate("General", "sCreateFilesFileExtension", "gek", "; File extension of automatically generated files from scripts inside mod");
 	g_scriptsFolder = ini.GetOrCreate("General", "sScriptsFolderPath", "Scripts", "; Path to Scripts folder (relative to base Fallout New Vegas directory) used for text editor feature");
+	auto forceAllowUnsafeSave = ini.GetOrCreate("General", "bForceAllowWindowSave", 1, "; Force GECK to allow saving while script window and other dialog boxes are open");
+	g_saveFileWhenScriptSaved = ini.GetOrCreate("General", "bSaveFileOnScriptCompile", 1, "; Save the loaded esp/esm each time you save/compile a script (requires bAllowSavingWhileGameIsOpen and bForceAllowWindowSave to be 1)");
+	g_openScriptsFolder = ini.GetOrCreate("General", "bOpenScriptFolder", 1, "; Open the folder containing the scripts of the loaded esp/esm when opening a mod in GECK");
+	
+	if (g_saveFileWhenScriptSaved)
+	{
+		forceAllowUnsafeSave = true;
+		enableSaveWhileGameOpen = true;
+	}
+	
 	g_scriptsFolder = ReplaceAll(g_scriptsFolder, "/", "\\");
 	if (g_scriptsFolder.empty())
 		g_scriptsFolder = "\\Scripts";
@@ -173,9 +187,15 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	if (enableToGeck)
 		StartGeckServer();
 	if (enableTextEditor)
-	{
 		InitializeCompileFromFile();
+	if (forceAllowUnsafeSave)
+	{
+		const auto* patch = "\xEB\x31\x90\x90\x90"; // jmp 0x444E3F
+		SafeWriteBuf(0x444E0C, (void*)patch, strlen(patch));
 	}
+	PatchPostPluginLoad();
+	
+	
 #endif
 	if (enableSaveWhileGameOpen)
 		PatchLockFiles();

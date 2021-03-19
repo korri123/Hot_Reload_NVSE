@@ -52,4 +52,5 @@ void InitializeHotReloadEditor();
 
 #if EDITOR
 void __fastcall SendHotReloadDataHook(Script* script);
+HWND__* GetGeckWindow();
 #endif

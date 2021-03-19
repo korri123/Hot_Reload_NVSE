@@ -5,9 +5,8 @@
 #include <thread>
 #include "SocketUtils.h"
 #include "GameAPI.h"
+#include "HotReload.h"
 
-
-HWND__* g_hwnd;
 
 std::queue<std::function<void()>> g_editorMainWindowExecutionQueue;
 
@@ -25,16 +24,9 @@ void HandleOpenRef(SocketServer& server)
 {
 	GeckOpenRefTransferObject obj;
 	server.ReadData(obj);
-	if (!g_hwnd)
-	{
-		auto* window = FindWindow("Garden of Eden Creation Kit", nullptr);
-		if (!window)
-		{
-			ShowErrorMessageBox("Failed to find window!");
-			return;
-		}
-		g_hwnd = window;
-	}
+	auto* window = GetGeckWindow();
+	if (!window)
+		return;
 	g_editorMainWindowExecutionQueue.push([=]()
 	{
 		auto* form = LookupFormByID(obj.refId);
@@ -44,11 +36,11 @@ void HandleOpenRef(SocketServer& server)
 			return;
 		}
 		(*reinterpret_cast<void(__thiscall**)(__int32, HWND, __int32, __int32)>(*reinterpret_cast<__int32*>(form) + 0x164))(
-			reinterpret_cast<UInt32>(form), g_hwnd, 0, 1);
-		SetForegroundWindow(g_hwnd);
+			reinterpret_cast<UInt32>(form), window, 0, 1);
+		SetForegroundWindow(window);
 		GeckExtenderMessageLog("Opened reference %X", obj.refId);
 	});
-	SendMessage(g_hwnd, WM_COMMAND, 0xFEED, reinterpret_cast<LPARAM>(MainWindowCallback));
+	SendMessage(window, WM_COMMAND, 0xFEED, reinterpret_cast<LPARAM>(MainWindowCallback));
 }
 
 void HandleOpenInGeck()

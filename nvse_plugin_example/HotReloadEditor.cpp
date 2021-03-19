@@ -13,6 +13,23 @@
 typedef void (__cdecl* _EditorLog)(ScriptBuffer* Buffer, const char* format, ...);
 const _EditorLog EditorLog = reinterpret_cast<_EditorLog>(0x5C5730);
 
+HWND__* g_hwnd = nullptr;
+
+HWND__* GetGeckWindow()
+{
+	if (!g_hwnd)
+	{
+		auto* window = FindWindow("Garden of Eden Creation Kit", nullptr);
+		if (!window)
+		{
+			ShowErrorMessageBox("Failed to find GECK window!");
+			return nullptr;
+		}
+		g_hwnd = window;
+	}
+	return g_hwnd;
+}
+
 void DoSendHotReloadData(Script* script)
 {
 	const char* esmFileName;
@@ -67,6 +84,7 @@ void DoSendHotReloadData(Script* script)
 		refNode = refNode->Next();
 	}
 }
+extern bool g_saveFileWhenScriptSaved;
 
 
 void SendHotReloadData(Script* script)
@@ -112,6 +130,28 @@ void __fastcall SendHotReloadDataHook(Script* script)
 		g_hotReloadClientThread = std::thread(SendHotReloadData, script);
 		g_hotReloadClientThread.detach();
 		CreateScriptFiles();
+	}
+	// do in main thread
+	if (g_saveFileWhenScriptSaved)
+	{
+		// run after * appears
+		auto saveThread = std::thread([]()
+		{
+			try
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+				if (auto* window = GetGeckWindow())
+				{
+					if (DataHandler::Get()->activeFile)
+						SendMessage(window, WM_COMMAND, 0x9CD2, reinterpret_cast<LPARAM>(DataHandler::Get()->activeFile->name)); //save
+				}
+			}
+			catch (...)
+			{
+				Log("Critical error in HotReloadEditor.cpp (save after compile), please open a bug report on how this happened", true);
+			}
+		});
+		saveThread.detach();
 	}
 }
 
