@@ -58,8 +58,8 @@ void CreateFilesThread(bool overwrite)
 			for (auto* script : scripts)
 			{
 				auto filePath = FormatString("%s\\%s.%s", path.c_str(), script->editorData.editorID.CStr(), g_createFileExtension.c_str());
-				if (!std::filesystem::exists(filePath))
-					TryAnotherFilePath(filePath, script->editorData.editorID.CStr());
+				//if (!std::filesystem::exists(filePath))
+				//	TryAnotherFilePath(filePath, script->editorData.editorID.CStr());
 				std::ifstream ifs(filePath);
 				std::stringstream ss;
 				ss << ifs.rdbuf();
