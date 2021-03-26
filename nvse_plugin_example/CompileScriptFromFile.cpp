@@ -10,6 +10,8 @@
 #include <filesystem>
 #include <set>
 
+
+#include "GameData.h"
 #include "HotReload.h"
 
 std::thread g_fileWatchThread;
@@ -29,7 +31,7 @@ void FileWatchThread(int dummy)
 	{
 		auto* handle = FindFirstChangeNotification(GetScriptsDir().c_str(), true, FILE_NOTIFY_CHANGE_LAST_WRITE);
 		if (handle == INVALID_HANDLE_VALUE || !handle)
-			throw std::exception(FormatString("Could not find directory %s", GetScriptsDir().c_str()).c_str());
+			throw std::runtime_error(FormatString("Could not find directory %s", GetScriptsDir().c_str()));
 		while (true)
 		{
 			auto waitStatus = WaitForSingleObject(handle, 20);
@@ -39,11 +41,17 @@ void FileWatchThread(int dummy)
 				waitStatus = WaitForSingleObject(handle, INFINITE);
 			}
 			if (waitStatus == WAIT_FAILED)
-				throw std::exception("Failed to wait");
+				throw std::runtime_error("Failed to wait");
 			if (!g_updateFromFile)
 			{
+				auto* activeMod = DataHandler::Get()->activeFile;
+				if (!activeMod)
+					throw std::runtime_error("Failed to get active mod!");
+				auto folderName = GetScriptsDir() + '\\' + std::string(activeMod->name);
+				if (!std::filesystem::exists(folderName))
+					throw std::runtime_error("Folder " + folderName + " doesn't exist!");
 				std::map<Script*, std::filesystem::path> queuedScripts;
-				for (std::filesystem::recursive_directory_iterator next(GetScriptsDir()), end; next != end; ++next)
+				for (std::filesystem::recursive_directory_iterator next(folderName), end; next != end; ++next)
 				{
 					auto fileName = next->path().filename().string();
 					std::string scriptName;
@@ -97,7 +105,7 @@ void FileWatchThread(int dummy)
 				}
 			}
 			if (!FindNextChangeNotification(handle))
-				throw std::exception("Failed to read again handle.");
+				throw std::runtime_error("Failed to read again handle.");
 		}
 	}
 	catch (std::exception& e)
