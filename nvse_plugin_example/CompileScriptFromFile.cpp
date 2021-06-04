@@ -29,7 +29,15 @@ void FileWatchThread(int dummy)
 {
 	try
 	{
-		auto* handle = FindFirstChangeNotification(GetScriptsDir().c_str(), true, FILE_NOTIFY_CHANGE_LAST_WRITE);
+		if (!std::filesystem::exists(GetScriptsDir()))
+			std::filesystem::create_directory(GetScriptsDir());
+		auto* activeMod = DataHandler::Get()->activeFile;
+		if (!activeMod)
+			throw std::exception("Active mod was not found.");
+		auto folderName = GetScriptsDir() + '\\' + std::string(activeMod->name);
+		if (!std::filesystem::exists(folderName))
+			std::filesystem::create_directory(folderName);
+		auto* handle = FindFirstChangeNotification(folderName.c_str(), true, FILE_NOTIFY_CHANGE_LAST_WRITE);
 		if (handle == INVALID_HANDLE_VALUE || !handle)
 			throw std::runtime_error(FormatString("Could not find directory %s", GetScriptsDir().c_str()));
 		while (true)
@@ -125,7 +133,5 @@ void InitializeCompileFromFile()
 {
 	g_fileWatchThread = std::thread(FileWatchThread, 0);
 	g_fileWatchThread.detach();
-	if (!std::filesystem::exists(GetScriptsDir()))
-		std::filesystem::create_directory(GetScriptsDir());
 	Log("Scripts can now be edited directly from file in folder " + GetScriptsDir());
 }

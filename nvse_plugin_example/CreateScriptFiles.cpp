@@ -7,6 +7,8 @@
 #include <sstream>
 #include "CreateScriptFiles.h"
 
+
+#include "CompileScriptFromFile.h"
 #include "SafeWrite.h"
 
 std::thread g_createFilesThread;
@@ -98,6 +100,7 @@ void CreateFilesThread(bool overwrite)
 }
 
 extern bool g_enableCreateFiles;
+extern bool g_enableTextEditor;
 
 void CreateScriptFiles()
 {
@@ -115,6 +118,8 @@ void __stdcall LoadPluginCreateScriptFiles()
 		g_createFilesThread = std::thread(CreateFilesThread, false);
 		g_createFilesThread.detach();
 	}
+	if (g_enableTextEditor)
+		InitializeCompileFromFile();
 }
 
 __declspec(naked) void HookPostPluginLoad()

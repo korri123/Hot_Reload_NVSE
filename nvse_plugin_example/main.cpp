@@ -12,14 +12,14 @@
 
 #if RUNTIME
 IDebugLog gLog("hot_reload.log");
-NVSEDataInterface* g_dataInterface;
+NVSEDataInterface *g_dataInterface;
 #else
 IDebugLog gLog("hot_reload_editor.log");
 #endif
 PluginHandle g_pluginHandle = kPluginHandle_Invalid;
 
 #if RUNTIME
-void MessageHandler(NVSEMessagingInterface::Message* msg)
+void MessageHandler(NVSEMessagingInterface::Message *msg)
 {
 
 	if (msg->type == NVSEMessagingInterface::kMessage_MainGameLoop)
@@ -27,16 +27,15 @@ void MessageHandler(NVSEMessagingInterface::Message* msg)
 		ScopedLock lock(g_criticalSection);
 		while (!g_mainThreadExecutionQueue.empty())
 		{
-			const auto& callback = g_mainThreadExecutionQueue.back();
+			const auto &callback = g_mainThreadExecutionQueue.back();
 			callback();
 			g_mainThreadExecutionQueue.pop();
 		}
 	}
-
 }
 #endif
 
-bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
+bool NVSEPlugin_Query(const NVSEInterface *nvse, PluginInfo *info)
 {
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "hot_reload";
@@ -51,7 +50,6 @@ bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
 		return false;
 	}
 
-	
 	if (!nvse->isEditor)
 	{
 #if EDITOR
@@ -86,12 +84,12 @@ bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
 }
 
 #ifndef RegisterScriptCommand
-#define RegisterScriptCommand(name) 	nvse->RegisterCommand(&kCommandInfo_ ##name);
+#define RegisterScriptCommand(name) nvse->RegisterCommand(&kCommandInfo_##name);
 #endif
 
 void PatchLockFiles()
 {
-	UInt8 pushInstr[] = { 0x6a, 0x07, 0x90 };
+	UInt8 pushInstr[] = {0x6a, 0x07, 0x90};
 #if RUNTIME
 	SafeWriteBuf(0xEE3343, pushInstr, sizeof(pushInstr) / sizeof(UInt8));
 #else
@@ -104,15 +102,17 @@ std::string g_createFileExtension = "gek";
 std::string g_scriptsFolder = "\\Scripts";
 bool g_saveFileWhenScriptSaved = true;
 bool g_openScriptsFolder = true;
+bool g_enableTextEditor = true;
 #if RUNTIME
-void (*ClearLambdasForScript)(Script*) = nullptr;
+void (*ClearLambdasForScript)(Script *) = nullptr;
 #endif
-void CrtErrorHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved)
+
+void CrtErrorHandler(const wchar_t *expression, const wchar_t *function, const wchar_t *file, unsigned int line, uintptr_t pReserved)
 {
 	Log("Critical error, please create a bug report on Nexus describing how this happened, with a download link to the .esp/.esm you are editing.", true);
 }
 
-bool NVSEPlugin_Load(const NVSEInterface* nvse)
+bool NVSEPlugin_Load(const NVSEInterface *nvse)
 {
 #if EDITOR
 	_set_invalid_parameter_handler(CrtErrorHandler);
@@ -125,7 +125,7 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	const auto errVal = ini.LoadFile(iniPath.c_str());
 
 	const auto enableHotReload = ini.GetOrCreate("General", "bHotReload", 1, "; Enable script hot reload");
-	const auto enableTextEditor = ini.GetOrCreate("General", "bTextEditorSupport", 1, "; Enable external text editor compile-on-save support for scripts");
+	const auto g_enableTextEditor = ini.GetOrCreate("General", "bTextEditorSupport", 1, "; Enable external text editor compile-on-save support for scripts");
 	const auto enableToGeck = ini.GetOrCreate("General", "bToGeck", 1, "; Enable ToGECK command that allows you to quickly send a ref or form to GECK from console");
 	auto enableSaveWhileGameOpen = ini.GetOrCreate("General", "bAllowSavingWhileGameIsOpen", 1, "; Allow GECK to save files while game is open");
 	g_enableCreateFiles = ini.GetOrCreate("General", "bSynchronizeScriptsWithFiles", 1, "; Create text files inside Scripts\\ folder for every script of a mod once you save a script in that mod and updates the scripts in file when you edit them in GECK.\n; Enables automatic synchronization between GECK and script files.");
@@ -134,26 +134,26 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	auto forceAllowUnsafeSave = ini.GetOrCreate("General", "bForceAllowWindowSave", 1, "; Force GECK to allow saving while script window and other dialog boxes are open");
 	g_saveFileWhenScriptSaved = ini.GetOrCreate("General", "bSaveFileOnScriptCompile", 1, "; Save the loaded esp/esm each time you save/compile a script (requires bAllowSavingWhileGameIsOpen and bForceAllowWindowSave to be 1)");
 	g_openScriptsFolder = ini.GetOrCreate("General", "bOpenScriptFolder", 1, "; Open the folder containing the scripts of the loaded esp/esm when opening a mod in GECK");
-	
+
 	if (g_saveFileWhenScriptSaved)
 	{
 		forceAllowUnsafeSave = true;
 		enableSaveWhileGameOpen = true;
 	}
-	
+
 	g_scriptsFolder = ReplaceAll(g_scriptsFolder, "/", "\\");
 	if (g_scriptsFolder.empty())
 		g_scriptsFolder = "\\Scripts";
 	if (g_scriptsFolder.at(0) != '\\')
 		g_scriptsFolder = '\\' + g_scriptsFolder;
-	
+
 	ini.SaveFile(iniPath.c_str(), false);
-	
+
 #if RUNTIME
 	if (nvse->isEditor)
 		return true;
-	g_dataInterface = static_cast<NVSEDataInterface*>(nvse->QueryInterface(kInterface_Data));
-	ClearLambdasForScript = (void(*)(Script*))(g_dataInterface->GetFunc(NVSEDataInterface::kNVSEData_LambdaDeleteAllForScript));
+	g_dataInterface = static_cast<NVSEDataInterface *>(nvse->QueryInterface(kInterface_Data));
+	ClearLambdasForScript = (void (*)(Script *))(g_dataInterface->GetFunc(NVSEDataInterface::kNVSEData_LambdaDeleteAllForScript));
 	if (!ClearLambdasForScript)
 	{
 		_ERROR("NVSE version either outdated or missing kNVSEData_LambdaDeleteAllForScript");
@@ -181,29 +181,26 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 		RegisterScriptCommand(ToGeck)
 
 #if RUNTIME
-	auto* messagingInterface = static_cast<NVSEMessagingInterface*>(nvse->QueryInterface(kInterface_Messaging));
+					auto *messagingInterface = static_cast<NVSEMessagingInterface *>(nvse->QueryInterface(kInterface_Messaging));
 	messagingInterface->RegisterListener(g_pluginHandle, "NVSE", MessageHandler);
 
 	if (enableHotReload)
 		InitializeHotReloadRuntime();
 
-	//SafeWrite32(0xEC9A89 + 1, 0x30); // change from exclusive access to write access
-	
+		//SafeWrite32(0xEC9A89 + 1, 0x30); // change from exclusive access to write access
+
 #else
-	if (enableHotReload)
-		InitializeHotReloadEditor();
+					if (enableHotReload)
+						InitializeHotReloadEditor();
 	if (enableToGeck)
 		StartGeckServer();
-	if (enableTextEditor)
-		InitializeCompileFromFile();
 	if (forceAllowUnsafeSave)
 	{
-		const auto* patch = "\xEB\x31\x90\x90\x90"; // jmp 0x444E3F
-		SafeWriteBuf(0x444E0C, (void*)patch, strlen(patch));
+		const auto *patch = "\xEB\x31\x90\x90\x90"; // jmp 0x444E3F
+		SafeWriteBuf(0x444E0C, (void *)patch, strlen(patch));
 	}
 	PatchPostPluginLoad();
-	
-	
+
 #endif
 	if (enableSaveWhileGameOpen)
 		PatchLockFiles();
