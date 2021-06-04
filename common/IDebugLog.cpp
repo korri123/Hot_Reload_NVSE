@@ -33,7 +33,7 @@ IDebugLog::~IDebugLog()
 
 void IDebugLog::Open(const char * path)
 {
-	logFile = _fsopen(path, "w", _SH_DENYWR);
+	logFile = _fsopen(path, "w", _SH_DENYNO);
 
 	if(!logFile)
 	{
@@ -46,7 +46,7 @@ void IDebugLog::Open(const char * path)
 			id++;
 
 			logFile = NULL;
-			logFile = _fsopen(name, "w", _SH_DENYWR);
+			logFile = _fsopen(name, "w", _SH_DENYNO);
 		}
 		while(!logFile && (id < 5));
 	}

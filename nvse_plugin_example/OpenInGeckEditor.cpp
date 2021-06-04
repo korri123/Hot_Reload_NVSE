@@ -75,8 +75,15 @@ void GeckThread(int _)
 	}
 	catch (const SocketException& e)
 	{
-		Log("ToGECK server failed! Check hot_reload.log for info", true);
-		Log(FormatString("Error: %s", e.what()));
+		if (e.m_errno != 10048)
+		{
+			Log(FormatString("Error: %s", e.what()));
+			Log("ToGECK server failed! Check hot_reload_editor.log for info", true);
+		}
+		else
+		{
+			Log("GECK already open; ToGECK will be disabled for this instance");
+		}
 	}
 	catch (...)
 	{

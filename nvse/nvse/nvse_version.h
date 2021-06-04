@@ -3,7 +3,7 @@
 
 // these have to be macros so they can be used in the .rc
 #define NVSE_VERSION_INTEGER		6
-#define NVSE_VERSION_INTEGER_MINOR	0
+#define NVSE_VERSION_INTEGER_MINOR	1
 #define NVSE_VERSION_INTEGER_BETA	0
 #define NVSE_VERSION_VERSTRING		"0, 6, 0, 0"
 #define NVSE_VERSION_PADDEDSTRING	"0005"

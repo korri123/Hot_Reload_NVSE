@@ -43,7 +43,7 @@ bool NVSEPlugin_Query(const NVSEInterface* nvse, PluginInfo* info)
 	info->version = 2;
 
 	// version checks
-	if (nvse->nvseVersion < NVSE_VERSION_INTEGER)
+	if (nvse->nvseVersion < PACKED_NVSE_VERSION)
 	{
 		const auto str = FormatString("HOT RELOAD: NVSE version too old (got %d expected at least %d). Plugin will NOT load! Install the latest version here: https://github.com/xNVSE/NVSE/releases/", nvse->nvseVersion, NVSE_VERSION_INTEGER);
 		ShowErrorMessageBox(str.c_str());
@@ -104,7 +104,9 @@ std::string g_createFileExtension = "gek";
 std::string g_scriptsFolder = "\\Scripts";
 bool g_saveFileWhenScriptSaved = true;
 bool g_openScriptsFolder = true;
-
+#if RUNTIME
+void (*ClearLambdasForScript)(Script*) = nullptr;
+#endif
 void CrtErrorHandler(const wchar_t* expression, const wchar_t* function, const wchar_t* file, unsigned int line, uintptr_t pReserved)
 {
 	Log("Critical error, please create a bug report on Nexus describing how this happened, with a download link to the .esp/.esm you are editing.", true);
@@ -151,6 +153,12 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 	if (nvse->isEditor)
 		return true;
 	g_dataInterface = static_cast<NVSEDataInterface*>(nvse->QueryInterface(kInterface_Data));
+	ClearLambdasForScript = (void(*)(Script*))(g_dataInterface->GetFunc(NVSEDataInterface::kNVSEData_LambdaDeleteAllForScript));
+	if (!ClearLambdasForScript)
+	{
+		_ERROR("NVSE version either outdated or missing kNVSEData_LambdaDeleteAllForScript");
+		return false;
+	}
 #else
 	if (!nvse->isEditor)
 		return true;
@@ -167,10 +175,10 @@ bool NVSEPlugin_Load(const NVSEInterface* nvse)
 
 	nvse->SetOpcodeBase(0x3911);
 	if (enableHotReload)
-		RegisterScriptCommand(GetGameHotReloaded);
+		RegisterScriptCommand(GetGameHotReloaded)
 
 	if (enableToGeck)
-		RegisterScriptCommand(ToGeck);
+		RegisterScriptCommand(ToGeck)
 
 #if RUNTIME
 	auto* messagingInterface = static_cast<NVSEMessagingInterface*>(nvse->QueryInterface(kInterface_Messaging));

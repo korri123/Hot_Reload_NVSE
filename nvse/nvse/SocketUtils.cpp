@@ -19,12 +19,18 @@ SocketServer::SocketServer(const UInt16 port)
 	{
 		throw SocketException("Failed to bind socket");
 	}
-	result = listen(this->m_serverSocket, 1);
+	result = listen(this->m_serverSocket, SOMAXCONN);
 	if (result == -1)
 	{
 		throw SocketException("Failed to listen to socket");
 	}
 	_MESSAGE("[RUNTIME] Successfully loaded server");
+}
+
+SocketServer::~SocketServer()
+{
+	closesocket(m_clientSocket);
+	closesocket(m_serverSocket);
 }
 
 void SocketServer::WaitForConnection()

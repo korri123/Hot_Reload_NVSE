@@ -15,6 +15,7 @@
 #include "ScriptCommands.h"
 
 extern NVSEDataInterface* g_dataInterface;
+extern void (*ClearLambdasForScript)(Script*);
 
 class VarInfoObject : public VarInfoTransferObject
 {
@@ -194,7 +195,8 @@ ICriticalSection g_criticalSection;
 
 void HandleHotReload()
 {
-	static SocketServer hotReloadServer(g_nvsePort);
+	
+	SocketServer hotReloadServer(g_nvsePort);
 	hotReloadServer.WaitForConnection();
 	ScriptTransferObject obj{};
 	hotReloadServer.ReadData(obj);
@@ -253,7 +255,6 @@ void HandleHotReload()
 			return;
 		if (!HandleScriptVarChanges(script, varInfos))
 			return;
-		
 
 		auto* oldDataPtr = script->data;
 		auto* newData = FormHeap_Allocate(obj.dataLength);
@@ -273,6 +274,7 @@ void HandleHotReload()
 		g_handledEventLists.clear();
 		g_gameHotLoadedScripts.Insert(script->refID);
 		g_dataInterface->ClearScriptDataCache();
+		ClearLambdasForScript(script);
 	});
 	
 }

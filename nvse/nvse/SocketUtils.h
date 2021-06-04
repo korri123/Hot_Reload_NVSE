@@ -19,6 +19,7 @@ public:
 	UInt32 m_serverSocket;
 	UInt32 m_clientSocket;
 	explicit SocketServer(UInt16 port);
+	~SocketServer();
 
 	void WaitForConnection();
 	void CloseConnection();
