@@ -4,9 +4,10 @@
 
 inline std::string GetCurPath()
 {
-	char path[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, path);
-	return path;
+	char buffer[MAX_PATH] = { 0 };
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+    std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+    return std::string(buffer).substr(0, pos);
 }
 
 std::string GetScriptsDir();

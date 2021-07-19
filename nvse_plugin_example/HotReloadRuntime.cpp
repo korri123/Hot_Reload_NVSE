@@ -272,9 +272,9 @@ void HandleHotReload()
 		const auto queuedMsg = "Hot reloaded " + std::string(script->GetName());
 		QueueUIMessage(queuedMsg.c_str(), 0, nullptr, nullptr, 2.5F, false);
 		g_handledEventLists.clear();
-		g_gameHotLoadedScripts.Insert(script->refID);
 		g_dataInterface->ClearScriptDataCache();
 		ClearLambdasForScript(script);
+		g_gameHotLoadedScripts.Insert(script->refID);
 	});
 	
 }

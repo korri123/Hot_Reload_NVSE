@@ -30,7 +30,7 @@ void TryAnotherFilePath(std::string& filePath, const char* scriptName)
 }
 
 extern bool g_openScriptsFolder;
-
+extern std::atomic<bool> g_compilingFromFile;
 
 void CreateFilesThread(bool overwrite)
 {

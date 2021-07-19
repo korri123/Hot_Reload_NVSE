@@ -394,3 +394,6 @@ ipch
 
 *.tlog
 *.recipe
+nvse_plugin_example/NVSE/Plugins/hot_reload.dll
+nvse_plugin_example/NVSE/Plugins/hot_reload.ini
+nvse_plugin_example/NVSE/Plugins/hot_reload_editor.dll

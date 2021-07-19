@@ -18,15 +18,17 @@ std::thread g_fileWatchThread;
 
 namespace GeckFuncs
 {
-	auto CompileScript = reinterpret_cast<void(__thiscall*)(void*, Script*, int)>(0x5C9800);
+	auto CompileScript = reinterpret_cast<bool(__thiscall*)(void*, Script*, int)>(0x5C9800);
 }
 
 void* g_scriptContext = reinterpret_cast<void*>(0xECFDF8);
 
 extern std::atomic<bool> g_updateFromFile;
-
+std::atomic<bool> g_compilingFromFile = false;
+std::atomic g_isFileWatchThreadRunning = false;
 void FileWatchThread(int dummy)
 {
+	g_isFileWatchThreadRunning = true;
 	try
 	{
 		if (!std::filesystem::exists(GetScriptsDir()))
@@ -100,14 +102,20 @@ void FileWatchThread(int dummy)
 					{
 						str = ReplaceAll(str, "\r\n", "\n"); // lol
 						str = ReplaceAll(str, "\n", "\r\n");
-						if (_stricmp(str.c_str(), script->text) != 0)
+						
+						if (script->text && _stricmp(str.c_str(), script->text) != 0)
 						{
+							g_compilingFromFile = true;
 							FormHeap_Free(script->text);
 							script->text = static_cast<char*>(FormHeap_Allocate(str.size() + 1));
 							strcpy_s(script->text, str.size() + 1, str.c_str());
-							GeckFuncs::CompileScript(g_scriptContext, script, 0);
-							SendHotReloadDataHook(script); // TODO: use plugin message when nvse 6.07 comes out
-							Log(FormatString("Compiled script '%s' from path '%s'", script->editorData.editorID.CStr(), path.string().c_str()));
+							auto result = GeckFuncs::CompileScript(g_scriptContext, script, 0);
+							if (result)
+							{
+								SendHotReloadDataHook(script); // TODO: use plugin message when nvse 6.07 comes out
+								Log(FormatString("Compiled script '%s' from path '%s'", script->editorData.editorID.CStr(), path.string().c_str()));
+							}
+							g_compilingFromFile = false;
 						}
 					}
 				}
@@ -124,6 +132,7 @@ void FileWatchThread(int dummy)
 	{
 		Log("Error in CompileScriptFromFile.cpp, please open a bug report on how this happened", true);
 	}
+	g_isFileWatchThreadRunning = false;
 }
 
 
@@ -131,7 +140,10 @@ void FileWatchThread(int dummy)
 
 void InitializeCompileFromFile()
 {
-	g_fileWatchThread = std::thread(FileWatchThread, 0);
-	g_fileWatchThread.detach();
-	Log("Scripts can now be edited directly from file in folder " + GetScriptsDir());
+	if (!g_isFileWatchThreadRunning)
+	{
+		g_fileWatchThread = std::thread(FileWatchThread, 0);
+		g_fileWatchThread.detach();
+		Log("Scripts can now be edited directly from file in folder " + GetScriptsDir());
+	}
 }

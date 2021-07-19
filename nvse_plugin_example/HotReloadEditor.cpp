@@ -120,16 +120,16 @@ void SendHotReloadData(Script* script)
 	
 
 }
-
+extern std::atomic<bool> g_compilingFromFile;
 std::thread g_hotReloadClientThread;
-
 void __fastcall SendHotReloadDataHook(Script* script)
 {
 	if (LookupFormByID(script->refID) && script->text && _stricmp(script->editorData.editorID.CStr(), "DefaultCompiler") != 0) // ignore temp scripts
 	{
 		g_hotReloadClientThread = std::thread(SendHotReloadData, script);
 		g_hotReloadClientThread.detach();
-		CreateScriptFiles();
+		if (!g_compilingFromFile)
+			CreateScriptFiles();
 	}
 	// do in main thread
 	if (g_saveFileWhenScriptSaved)
