@@ -9,6 +9,9 @@ extern std::queue<std::function<void()>> g_mainThreadExecutionQueue;
 extern ICriticalSection g_criticalSection;
 extern bool g_jipScriptRunner;
 extern bool g_runJipScriptRunner;
+#if RUNTIME
+extern std::string g_altScriptRunnerPath;
+#endif
 
 class ScriptTransferObject
 {

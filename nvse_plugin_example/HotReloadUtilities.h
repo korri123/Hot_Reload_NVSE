@@ -15,9 +15,14 @@ std::string GetScriptsDir();
 inline void Log(const std::string& s, bool warn=false)
 {
 	auto str = "HOT RELOAD: " + s;
+#if RUNTIME
+	_MESSAGE("%s", str.c_str());
+	Console_Print_Long(str);
+#else
 	GeckExtenderMessageLog(str.c_str());
 	if (warn)
 		ShowErrorMessageBox(str.c_str());
+#endif
 }
 
 inline bool ValidString(const char* str)

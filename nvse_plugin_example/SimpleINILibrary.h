@@ -1981,6 +1981,8 @@ CSimpleIniTempl<SI_CHAR, SI_STRLESS, SI_CONVERTER>::AddEntry(
     SI_Error rc;
     bool bInserted = false;
 
+    m_bChangesMade = true;
+
     SI_ASSERT(!a_pComment || IsComment(*a_pComment));
 
     // if we are copying strings then make a copy of the comment now

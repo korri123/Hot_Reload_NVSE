@@ -133,13 +133,15 @@ void PopulateLastWriteTimes(const std::string& dir)
 
 void StartScriptRunnerWatchThread()
 {
-	std::string scriptsFolder = GetCurPath() + "\\Data\\NVSE\\Plugins\\scripts";
-
+	std::string scriptsFolder = GetCurPath() + R"(\Data\NVSE\Plugins\scripts)";
+	if (!g_altScriptRunnerPath.empty())
+		scriptsFolder = GetCurPath() + '\\' + g_altScriptRunnerPath;
 	if (!std::filesystem::exists(scriptsFolder))
 	{
-		Log("No scripts folder found, Hot Reload will not watch JIP script runner files");
+		Log("No scripts folder found, Hot Reload will not watch JIP script runner files, looked in path: " + scriptsFolder);
 		return;
 	}
+	PopulateLastWriteTimes(scriptsFolder);
 
 	g_scriptRunnerWatchThread = std::thread(WatchScriptRunner, scriptsFolder);
 	g_scriptRunnerWatchThread.detach();
