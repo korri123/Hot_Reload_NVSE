@@ -2,9 +2,13 @@
 #include <queue>
 #include <functional>
 #include "common/ICriticalSection.h"
+#include "GameTypes.h"
+#include "GameForms.h"
 
 extern std::queue<std::function<void()>> g_mainThreadExecutionQueue;
 extern ICriticalSection g_criticalSection;
+extern bool g_jipScriptRunner;
+extern bool g_runJipScriptRunner;
 
 class ScriptTransferObject
 {
@@ -49,6 +53,7 @@ const auto g_nvsePort = 12059;
 
 void InitializeHotReloadRuntime();
 void InitializeHotReloadEditor();
+void HandleHotReloadSideEffects(Script* script, tList<VariableInfo>* oldVarList, const std::string& modName);
 
 #if EDITOR
 void __fastcall SendHotReloadDataHook(Script* script);

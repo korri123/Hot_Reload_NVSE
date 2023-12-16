@@ -228,40 +228,43 @@ struct ScriptLineBuffer
 
 // size 0x58? Nothing initialized beyond 0x50.
 struct ScriptBuffer
-{	
-	template <typename tData> struct Node
-	{
-		tData		* data;
-		Node<tData>	* next;
-	};
-
+{
+#if RUNTIME
+	ScriptBuffer() { ThisStdCall(0x5AE490, this); }
+	~ScriptBuffer() { ThisStdCall(0x5AE5C0, this); }
+#endif
 	enum RuntimeMode
 	{
 		kEditor = 0,
 		kGameConsole = 1,
 	};
 
-	char			* scriptText;		// 000
-	UInt32			textOffset;			// 004 
-	RuntimeMode		runtimeMode;		// 008
-	String			scriptName;			// 00C
-	UInt32			errorCode;			// 014
-	UInt16			unk018;				// 018
-	UInt16			unk01A;				// 01A
-	UInt32			curLineNumber;		// 01C 
-	UInt8			* scriptData;		// 020 pointer to 0x4000-byte array
-	UInt32			dataOffset;			// 024
-	UInt32			unk028;				// 028
-	UInt32			numRefs;			// 02C
-	UInt32			unk030;				// 030
-	UInt32			varCount;			// 034 script->varCount
-	UInt8			scriptType;			// 038 script->type
-	UInt8			unk039;				// 039 script->unk35
-	UInt8			unk03A[2];
+	struct ScriptInfo
+	{
+		UInt32 unusedVariableCount; // 00 (18)
+		UInt32 numRefs;				// 04 (1C)
+		UInt32 dataLength;			// 08 (20)
+		UInt32 varCount;			// 0C (24)
+		UInt16 type;				// 10 (28)
+		bool compiled;				// 12 (2A)
+		UInt8 unk13;				// 13 (2B)
+	};
+
+	const char* scriptText;			   // 000
+	UInt32 textOffset;			   // 004
+	RuntimeMode runtimeMode;	   // 008
+	String scriptName;			   // 00C
+	UInt32 errorCode;			   // 014
+	bool partialScript;			   // 018
+	UInt8 pad019[3];			   // 019
+	UInt32 curLineNumber;		   // 01C
+	UInt8* scriptData;			   // 020 pointer to 0x4000-byte array
+	UInt32 dataOffset;			   // 024
+	ScriptInfo info;	   // 028
 	Script::VarInfoEntry	vars;		// 03C
 	Script::RefListEntry	refVars;	// 044 probably ref vars
-	UInt32			unk04C;				// 04C num lines?
-	Node<ScriptLineBuffer>	lines;		// 050
+	Script* currentScript;		   // 04C num lines?
+	tList<ScriptLineBuffer> lines;
 	// nothing else initialized
 
 	// convert a variable or form to a RefVar, add to refList if necessary

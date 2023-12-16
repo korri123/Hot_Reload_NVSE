@@ -213,7 +213,7 @@ Script::RefVariable* ScriptBuffer::ResolveRef(const char* refName)
 			listEnd->next = entry;
 		}
 
-		numRefs++;
+		info.numRefs++;
 		return newRef;
 	}
 	else

@@ -1,5 +1,6 @@
 #include "CreateScriptFiles.h"
 #include "HotReload.h"
+#include "JIPScriptRunner.h"
 #include "OpenInGeck.h"
 #include "nvse/PluginAPI.h"
 #include "PluginAPI.h"
@@ -31,6 +32,10 @@ void MessageHandler(NVSEMessagingInterface::Message *msg)
 			callback();
 			g_mainThreadExecutionQueue.pop();
 		}
+	}
+	if (msg->type == NVSEMessagingInterface::kMessage_DeferredInit && g_jipScriptRunner)
+	{
+		StartScriptRunnerWatchThread();
 	}
 }
 #endif
@@ -103,6 +108,8 @@ std::string g_scriptsFolder = "\\Scripts";
 bool g_saveFileWhenScriptSaved = true;
 bool g_openScriptsFolder = true;
 bool g_enableTextEditor = true;
+bool g_jipScriptRunner = true;
+bool g_runJipScriptRunner = true;
 #if RUNTIME
 void (*ClearLambdasForScript)(Script *) = nullptr;
 #endif
@@ -134,6 +141,9 @@ bool NVSEPlugin_Load(const NVSEInterface *nvse)
 	auto forceAllowUnsafeSave = ini.GetOrCreate("General", "bForceAllowWindowSave", 1, "; Force GECK to allow saving while script window and other dialog boxes are open");
 	g_saveFileWhenScriptSaved = ini.GetOrCreate("General", "bSaveFileOnScriptCompile", 1, "; Save the loaded esp/esm each time you save/compile a script (requires bAllowSavingWhileGameIsOpen and bForceAllowWindowSave to be 1)");
 	g_openScriptsFolder = ini.GetOrCreate("General", "bOpenScriptFolder", 1, "; Open the folder containing the scripts of the loaded esp/esm when opening a mod in GECK");
+
+	g_jipScriptRunner = ini.GetOrCreate("General", "bJipScriptRunner", 1, "; Enable Hot Reloading JIP LN NVSE Script Runner files");
+	g_runJipScriptRunner = ini.GetOrCreate("General", "bRunJipScriptRunner", 1, "; Run JIP LN NVSE Script Runner file immediately on Hot Reload");
 
 	if (g_saveFileWhenScriptSaved)
 	{

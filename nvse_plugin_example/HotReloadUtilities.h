@@ -24,3 +24,28 @@ inline bool ValidString(const char* str)
 {
 	return str && strlen(str);
 }
+
+template <typename T, const UInt32 ConstructorPtr = 0, typename... Args>
+T* New(Args &&... args)
+{
+	auto* alloc = FormHeap_Allocate(sizeof(T));
+	if constexpr (ConstructorPtr)
+	{
+		ThisStdCall(ConstructorPtr, alloc, std::forward<Args>(args)...);
+	}
+	else
+	{
+		memset(alloc, 0, sizeof(T));
+	}
+	return static_cast<T*>(alloc);
+}
+
+template <typename T, const UInt32 DestructorPtr = 0, typename... Args>
+void Delete(T* t, Args &&... args)
+{
+	if constexpr (DestructorPtr)
+	{
+		ThisStdCall(DestructorPtr, t, std::forward<Args>(args)...);
+	}
+	FormHeap_Free(t);
+}

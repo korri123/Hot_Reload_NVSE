@@ -75,6 +75,7 @@
     <ClCompile Include="CompileScriptFromFile.cpp" />
     <ClCompile Include="CreateScriptFiles.cpp" />
     <ClCompile Include="HotReloadUtilities.cpp" />
+    <ClCompile Include="JIPScriptRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\nvse\nvse\GameAPI.h">
@@ -138,6 +139,7 @@
     <ClInclude Include="SimpleINILibrary.h" />
     <ClInclude Include="CreateScriptFiles.h" />
     <ClInclude Include="HotReloadUtilities.h" />
+    <ClInclude Include="JIPScriptRunner.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
