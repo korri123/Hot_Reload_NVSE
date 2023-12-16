@@ -93,13 +93,25 @@ void WatchScriptRunner(const std::string& folder)
 				{
 					str = ReplaceAll(str, "\r\n", "\n"); // lol
 					str = ReplaceAll(str, "\n", "\r\n");
-					
+
+					// fixing circular reference issue
+					auto oldVarList = script->varList;
+					auto oldRefList = script->refList;
+					script->varList = {};
+					script->refList = {};
+
 					const auto scriptName = path.filename().string();
-					auto* oldVarList = CreateVarListCopy(reinterpret_cast<tList<VariableInfo>*>(&script->varList));
 					const auto result = ScriptRecompile(scriptName.c_str(), str.c_str(), script);
 					if (result)
 					{
-						HandleHotReloadSideEffects(script, oldVarList, "JIP Script Runner");
+						char temp[sizeof Script];
+						auto* tempScript = reinterpret_cast<Script*>(temp);
+						tempScript->varList = oldVarList;
+						tempScript->refList = oldRefList;
+						ThisStdCall(0x5AA350, temp); // Clear ref list
+						ThisStdCall(0x5AA2E0, temp); // Clear var list
+
+						HandleHotReloadSideEffects(script, "JIP Script Runner");
 						Log(FormatString("Compiled script '%s' from path '%s'", scriptName.c_str(), path.string().c_str()));
 						if (g_runJipScriptRunner)
 						{
@@ -108,7 +120,8 @@ void WatchScriptRunner(const std::string& folder)
 					}
 					else
 					{
-						Delete(oldVarList);
+						script->varList = oldVarList;
+						script->refList = oldRefList;
 					}
 				}
 			}

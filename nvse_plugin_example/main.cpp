@@ -44,7 +44,7 @@ bool NVSEPlugin_Query(const NVSEInterface *nvse, PluginInfo *info)
 {
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "hot_reload";
-	info->version = 3;
+	info->version = 4;
 
 	// version checks
 	if (nvse->nvseVersion < PACKED_NVSE_VERSION)
@@ -146,7 +146,7 @@ bool NVSEPlugin_Load(const NVSEInterface *nvse)
 
 	g_jipScriptRunner = ini.GetOrCreate("General", "bJipScriptRunner", 1, "; Enable Hot Reloading JIP LN NVSE Script Runner files");
 	g_runJipScriptRunner = ini.GetOrCreate("General", "bRunJipScriptRunner", 1, "; Run JIP LN NVSE Script Runner file immediately on Hot Reload");
-	g_altScriptRunnerPath = ini.GetOrCreate("General", "sAltScriptRunnerPath", "", "; Path to JIP LN NVSE Script Runner file to run instead of the default one (relative to FalloutNV\\). This can be useful as Hot Reload won't work in MO2 for any file under Data\\, so you can symlink the scripts from main directory (i.e. FalloutNV\\ScriptRunner) to nvse\\plugins\\scripts and edit from the alt dir.");
+	g_altScriptRunnerPath = ini.GetOrCreate("General", "sAltScriptRunnerPath", "", "; Path to JIP LN NVSE Script Runner file to run instead of the default one (relative to FalloutNV\\). This can be useful as Hot Reload won't work in MO2 for any file under Data\\, so you can symlink the scripts from main directory (i.e. FalloutNV\\ScriptRunner) to Data\\nvse\\plugins\\scripts and edit from the alt dir.");
 
 	if (g_saveFileWhenScriptSaved)
 	{

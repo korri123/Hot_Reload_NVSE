@@ -193,12 +193,9 @@ VariableInfo* GetVariableInfo(tList<VariableInfo>& list, UInt32 varIdx)
 std::queue<std::function<void()>> g_mainThreadExecutionQueue;
 ICriticalSection g_criticalSection;
 
-void HandleHotReloadSideEffects(Script* script, tList<VariableInfo>* oldVarList, const std::string& modName)
+void HandleHotReloadSideEffects(Script* script, const std::string& modName)
 {
-	const auto reloadedScriptIter = g_reloadedScripts.find(script->refID);
-	if (reloadedScriptIter != g_reloadedScripts.end())
-		g_reloadedScripts.erase(reloadedScriptIter);
-	g_reloadedScripts.emplace(std::make_pair(script->refID, oldVarList));
+	
 	HotReloadConsolePrint("Reloaded script '%s' in '%s'", script->GetName(), modName.c_str());
 	const auto queuedMsg = "Hot reloaded " + std::string(script->GetName());
 	QueueUIMessage(queuedMsg.c_str(), 0, nullptr, nullptr, 2.5F, false);
@@ -280,7 +277,11 @@ void HandleHotReload()
 		script->info.dataLength = obj.dataLength;
 		script->info.varCount = obj.numVars;
 		script->info.numRefs = obj.numRefs;
-		HandleHotReloadSideEffects(script, oldVarList, modName);
+		const auto reloadedScriptIter = g_reloadedScripts.find(script->refID);
+		if (reloadedScriptIter != g_reloadedScripts.end())
+			g_reloadedScripts.erase(reloadedScriptIter);
+		g_reloadedScripts.emplace(std::make_pair(script->refID, oldVarList));
+		HandleHotReloadSideEffects(script, modName);
 	});
 	
 }

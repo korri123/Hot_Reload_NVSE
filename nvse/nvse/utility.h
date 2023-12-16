@@ -23,6 +23,7 @@ public:
 	void Reset() {new ((T*)&objData) T();}
 
 	T& operator()() {return *(T*)&objData;}
+	T* operator->() const {return (T*)&objData;}
 
 	TempObject& operator=(const T &rhs) {objData = *(Buffer*)&rhs;}
 	TempObject& operator=(const TempObject &rhs) {objData = rhs.objData;}

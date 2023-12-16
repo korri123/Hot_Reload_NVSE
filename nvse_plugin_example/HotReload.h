@@ -56,7 +56,7 @@ const auto g_nvsePort = 12059;
 
 void InitializeHotReloadRuntime();
 void InitializeHotReloadEditor();
-void HandleHotReloadSideEffects(Script* script, tList<VariableInfo>* oldVarList, const std::string& modName);
+void HandleHotReloadSideEffects(Script* script, const std::string& modName);
 
 #if EDITOR
 void __fastcall SendHotReloadDataHook(Script* script);
