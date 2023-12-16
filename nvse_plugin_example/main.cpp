@@ -44,7 +44,7 @@ bool NVSEPlugin_Query(const NVSEInterface *nvse, PluginInfo *info)
 {
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "hot_reload";
-	info->version = 2;
+	info->version = 3;
 
 	// version checks
 	if (nvse->nvseVersion < PACKED_NVSE_VERSION)
@@ -54,7 +54,7 @@ bool NVSEPlugin_Query(const NVSEInterface *nvse, PluginInfo *info)
 		_ERROR(str.c_str());
 		return false;
 	}
-
+	
 	if (!nvse->isEditor)
 	{
 #if EDITOR
@@ -191,7 +191,7 @@ bool NVSEPlugin_Load(const NVSEInterface *nvse)
 		RegisterScriptCommand(ToGeck)
 
 #if RUNTIME
-					auto *messagingInterface = static_cast<NVSEMessagingInterface *>(nvse->QueryInterface(kInterface_Messaging));
+	auto *messagingInterface = static_cast<NVSEMessagingInterface *>(nvse->QueryInterface(kInterface_Messaging));
 	messagingInterface->RegisterListener(g_pluginHandle, "NVSE", MessageHandler);
 
 	if (enableHotReload)
