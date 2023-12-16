@@ -106,6 +106,10 @@ void WatchScriptRunner(const std::string& folder)
 							ScriptRun(script);
 						}
 					}
+					else
+					{
+						Delete(oldVarList);
+					}
 				}
 			}
 		});
