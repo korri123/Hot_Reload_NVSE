@@ -57,12 +57,8 @@ UInt32 Script::GetVariableType(VariableInfo* varInfo)
 	else
 	{
 		// if it's a ref var a matching varIdx will appear in RefList
-		for (RefListEntry* refEntry = &refList; refEntry; refEntry = refEntry->next)
-		{
-			if (refEntry->var->varIdx == varInfo->idx)
-				return eVarType_Ref;
-		}
-
+		if (refList.Contains([&](const RefVariable& ref) { return ref.varIdx == varInfo->idx; }))
+			return eVarType_Ref;
 		return varInfo->type;
 	}
 }
@@ -77,10 +73,10 @@ UInt32 Script::GetVarCount() const
 {
 	// info->varCount include index
 	auto count = 0U;
-	auto* node = &this->varList;
+	auto* node = this->varList.Head();
 	while (node)
 	{
-		if (node->data)
+		if (node->data->data)
 			++count;
 		node = node->Next();
 	}
@@ -89,15 +85,7 @@ UInt32 Script::GetVarCount() const
 
 UInt32 Script::GetRefCount() const
 {
-	auto count = 0U;
-	auto* node = &this->refList;
-	while (node)
-	{
-		if (node->var)
-			++count;
-		node = node->Next();
-	}
-	return count;
+	return refList.Count();
 }
 
 #if RUNTIME
@@ -165,68 +153,60 @@ bool Script::RunScriptLine(const char * text, TESObjectREFR * object)
 Script::RefVariable* ScriptBuffer::ResolveRef(const char* refName)
 {
 	Script::RefVariable* newRef = NULL;
-	Script::RefListEntry* listEnd = &refVars;
 
 	// see if it's already in the refList
-	for (Script::RefListEntry* cur = &refVars; cur; cur = cur->next)
-	{
-		listEnd = cur;
-		if (cur->var && !_stricmp(cur->var->name.m_data, refName))
-			return cur->var;
-	}
-
+	auto* foundRef = refVars.FindFirst([&](Script::RefVariable* cur) { return cur->name.m_data && !_stricmp(cur->name.m_data, refName); });
+	if (foundRef)
+		newRef = foundRef;
 	// not in list
 
 	// is it a local ref variable?
 	VariableInfo* varInfo = vars.GetVariableByName(refName);
 	if (varInfo && GetVariableType(varInfo, NULL) == Script::eVarType_Ref)
 	{
-		newRef = (Script::RefVariable*)FormHeap_Allocate(sizeof(Script::RefVariable));
-		newRef->form = NULL;
+		if (!newRef)
+			newRef = New<Script::RefVariable>();
+		newRef->varIdx = varInfo->idx;
 	}
-	else		// is it a form or global?
+	else // is it a form or global?
 	{
-		TESForm* form = GetFormByID(refName);
+		TESForm* form;
+		if (_stricmp(refName, "player") == 0)
+		{
+			// PlayerRef (this is how the vanilla compiler handles it so I'm changing it for consistency and to fix issues)
+			form = LookupFormByID(0x14);
+		}
+		else
+		{
+			form = GetFormByID(refName);
+		}
 		if (form)
 		{
 			TESObjectREFR* refr = DYNAMIC_CAST(form, TESForm, TESObjectREFR);
-			if (refr && !refr->IsPersistent())		// only persistent refs can be used in scripts
+			if (refr && !refr->IsPersistent()) // only persistent refs can be used in scripts
 				return NULL;
-
-			newRef = (Script::RefVariable*)FormHeap_Allocate(sizeof(Script::RefVariable));
-			memset(newRef, 0, sizeof(Script::RefVariable));
+			if (!newRef)
+				newRef = New<Script::RefVariable>();
 			newRef->form = form;
 		}
 	}
 
-	if (newRef)		// got it, add to refList
+	if (!foundRef && newRef) // got it, add to refList
 	{
 		newRef->name.Set(refName);
-		newRef->varIdx = 0;
-		if (!refVars.var)
-			refVars.var = newRef;
-		else
-		{
-			Script::RefListEntry* entry = (Script::RefListEntry*)FormHeap_Allocate(sizeof(Script::RefListEntry));
-			entry->var = newRef;
-			entry->next = NULL;
-			listEnd->next = entry;
-		}
-
+		refVars.Append(newRef);
 		info.numRefs++;
-		return newRef;
 	}
-	else
-		return NULL;
+	return newRef;
 }
 
 UInt32 ScriptBuffer::GetRefIdx(Script::RefVariable* ref)
 {
 	UInt32 idx = 0;
-	for (Script::RefListEntry* curEntry = &refVars; curEntry && curEntry->var; curEntry = curEntry->next)
+	for (Script::RefList::_Node* curEntry = refVars.Head(); curEntry && curEntry->data; curEntry = curEntry->next)
 	{
 		idx++;
-		if (ref == curEntry->var)
+		if (ref == curEntry->data)
 			break;
 	}
 
@@ -290,32 +270,35 @@ public:
 
 VariableInfo* Script::GetVariableByName(const char* varName)
 {
-	VarListVisitor visitor(&varList);
-	const VarInfoEntry* varEntry = visitor.Find(ScriptVarFinder(varName));
-	if (varEntry)
-		return varEntry->data;
-	else
-		return NULL;
+	auto* varIter = varList.Head();
+	do
+	{
+		auto* varInfo = varIter->data;
+		if (varInfo && !StrCompare(varName, varInfo->name.m_data))
+			return varInfo;
+	} while (varIter = varIter->next);
+	return NULL;
 }
 
-Script::RefVariable	* Script::GetVariable(UInt32 reqIdx)
+Script::RefVariable	* Script::GetVariable(UInt32 refIdx)
 {
-	UInt32	idx = 1;	// yes, really starts at 1
-	if (reqIdx)
-		for(RefListEntry * entry = &refList; entry; entry = entry->next)
+	UInt32 idx = 1; // yes, really starts at 1
+	if (refIdx)
+	{
+		auto* varIter = refList.Head();
+		do
 		{
-			if(idx == reqIdx)
-				return entry->var;
-
+			if (idx == refIdx)
+				return varIter->data;
 			idx++;
-		}
-
+		} while (varIter = varIter->next);
+	}
 	return NULL;
 }
 
 VariableInfo* Script::GetVariableInfo(UInt32 idx)
 {
-	for (Script::VarInfoEntry* entry = &varList; entry; entry = entry->next)
+	for (auto* entry = varList.Head(); entry; entry = entry->next)
 		if (entry->data && entry->data->idx == idx)
 			return entry->data;
 
@@ -324,75 +307,34 @@ VariableInfo* Script::GetVariableInfo(UInt32 idx)
 
 UInt32 Script::AddVariable(TESForm * form)
 {
-	UInt32		resultIdx = 1;
-
-	RefVariable	* var = (RefVariable*)FormHeap_Allocate(sizeof(RefVariable));
+	auto* var = static_cast<RefVariable*>(FormHeap_Allocate(sizeof(RefVariable)));
 
 	var->name.Set("");
 	var->form = form;
 	var->varIdx = 0;
 
-	if(!refList.var)
-	{
-		// adding the first object
-		refList.var = var;
-		refList.next = NULL;
-	}
-	else
-	{
-		resultIdx++;
-
-		// find the last RefListEntry
-		RefListEntry	* entry;
-		for(entry = &refList; entry->next; entry = entry->next, resultIdx++) ;
-
-		RefListEntry	* newEntry = (RefListEntry *)FormHeap_Allocate(sizeof(RefListEntry));
-
-		newEntry->var = var;
-		newEntry->next = NULL;
-
-		entry->next = newEntry;
-	}
-
-	info.numRefs = resultIdx + 1;
-
-	return resultIdx;
+	refList.Append(var);
+	++info.numRefs;
+	return info.numRefs;
 }
 
 void Script::CleanupVariables(void)
 {
-	delete refList.var;
-
-	RefListEntry	* entry = refList.next;
-	while(entry)
-	{
-		RefListEntry	* next = entry->next;
-
-		delete entry->var;
-		delete entry;
-
-		entry = next;
-	}
+	refList.DeleteAll();
 }
 
-VariableInfo* Script::VarInfoEntry::GetVariableByName(const char* varName)
+VariableInfo* Script::VarInfoList::GetVariableByName(const char* varName)
 {
-	for (Script::VarInfoEntry* entry = this; entry; entry = entry->next)
-	{
-		if (entry->data && !StrCompare(entry->data->name.m_data, varName))
-			return entry->data;
-	}
-
-	return NULL;
+	return FindFirst([&](const VariableInfo* v) { return StrCompare(v->name.m_data, varName) == 0; });
 }
 
-UInt32 Script::RefListEntry::GetIndex(Script::RefVariable* refVar)
+UInt32 Script::RefList::GetIndex(Script::RefVariable* refVar)
 {
 	UInt32 idx = 0;
-	for (RefListEntry* cur = this; cur; cur = cur->next)
+	for (auto cur = this->Begin(); !cur.End(); cur.Next())
 	{
 		idx++;
-		if (cur->var == refVar)
+		if (*cur == refVar)
 			return idx;
 	}
 

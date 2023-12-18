@@ -156,6 +156,18 @@ public:
 		return NULL;
 	}
 
+	template <typename F>
+	Item* FindFirst(F&& func) const
+	{
+		for (auto iter = Begin(); !iter.End(); ++iter)
+		{
+			if (*iter && func(*iter))
+				return *iter;
+		}
+		return nullptr;
+	}
+
+
 	void Init(Item* item = NULL)
 	{
 		m_listHead.data = item;
@@ -200,6 +212,16 @@ public:
 		Iterator(tList* _list) : m_curr(&_list->m_listHead) {}
 		Iterator(tList& _list, Item* _item) : m_curr(&_list.m_listHead) { Find(_item); }
 		Iterator(tList* _list, Item* _item) : m_curr(&_list->m_listHead) { Find(_item); }
+
+		bool operator!=(const Iterator& other) const
+		{
+			return m_curr != other.m_curr;
+		}
+
+		bool operator!=(Iterator&& other) const
+		{
+			return m_curr != other.m_curr;
+		}
 	};
 
 	const Iterator Begin() const { return Iterator(Head()); }
@@ -512,6 +534,18 @@ public:
 				return true;
 		}
 		return false;
+	}
+
+	// for use with C++11 range based loops only.
+	Iterator begin() const
+	{
+		return Begin();
+	}
+
+	// for use with C++11 range based loops only.
+	Iterator end() const
+	{
+		return Iterator(static_cast<_Node*>(nullptr));
 	}
 };
 STATIC_ASSERT(sizeof(tList<void*>) == 0x8);

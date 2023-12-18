@@ -1,4 +1,7 @@
 #pragma once
+#include <functional>
+#include <memory>
+
 #include "Utilities.h"
 #include <string>
 
@@ -53,4 +56,20 @@ void Delete(T* t, Args &&... args)
 		ThisStdCall(DestructorPtr, t, std::forward<Args>(args)...);
 	}
 	FormHeap_Free(t);
+}
+
+template <typename T>
+using game_unique_ptr = std::unique_ptr<T, std::function<void(T*)>>;
+
+template <typename T, const UInt32 DestructorPtr = 0>
+game_unique_ptr<T> MakeUnique(T* t)
+{
+	return game_unique_ptr<T>(t, [](T* t2) { Delete<T, DestructorPtr>(t2); });
+}
+
+template <typename T, const UInt32 ConstructorPtr = 0, const UInt32 DestructorPtr = 0, typename... ConstructorArgs>
+game_unique_ptr<T> MakeUnique(ConstructorArgs &&... args)
+{
+	auto* obj = New<T, ConstructorPtr>(std::forward(args)...);
+	return MakeUnique<T, DestructorPtr>(obj);
 }

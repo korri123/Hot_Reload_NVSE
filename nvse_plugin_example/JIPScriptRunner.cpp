@@ -15,22 +15,41 @@
 #include "HotReload.h"
 
 std::thread g_scriptRunnerWatchThread;
-std::unordered_map<std::filesystem::path, std::filesystem::file_time_type> g_lastWriteTimes;
-
+std::unordered_map<std::filesystem::path, std::string> g_fileContents;
+//	Script() { ThisStdCall(0x5AA0F0, this); }
+// ~Script() { ThisStdCall(0x5AA1A0, this); }
 bool ScriptRecompile(const char* scrName, const char* text, Script* script)
 {
+	const auto newScript = MakeUnique<Script, 0x5AA0F0, 0x5AA1A0>();
 	ScriptBuffer scrBuffer;
 	scrBuffer.scriptText = text;
 	scrBuffer.runtimeMode = ScriptBuffer::kGameConsole;
 	scrBuffer.scriptName.Set(scrName);
 	scrBuffer.partialScript = true;
 	scrBuffer.currentScript = script;
-	return StdCall<bool>(0x5AEB90, script, &scrBuffer);
+	const auto result = StdCall<bool>(0x5AEB90, newScript.get(), &scrBuffer);
+	if (!result)
+		return false;
+	FormHeap_Free(script->data);
+	script->data = newScript->data;
+	newScript->data = nullptr;
+	script->varList.Replace(&newScript->varList);
+	script->refList.Replace(&newScript->refList);
+
+	return true;
 }
 
 void ScriptRun(Script* script)
 {
 	ThisStdCall(0x5AC1E0, script, nullptr, nullptr, nullptr, true);
+}
+
+std::string ReadFile(const std::filesystem::path& path)
+{
+	std::ifstream t(path);
+	std::stringstream buffer;
+	buffer << t.rdbuf();
+	return buffer.str();
 }
 
 tList<VariableInfo>* CreateVarListCopy(tList<VariableInfo>* varList)
@@ -39,6 +58,16 @@ tList<VariableInfo>* CreateVarListCopy(tList<VariableInfo>* varList)
 	CdeclCall(0x5AB930, varList, newVarList);
 	return newVarList;
 }
+
+struct FindNextChange
+{
+	HANDLE handle;
+	FindNextChange(HANDLE handle) : handle(handle) {}
+	~FindNextChange()
+	{
+		FindNextChangeNotification(handle);
+	}
+};
 
 void WatchScriptRunner(const std::string& folder)
 {
@@ -51,96 +80,74 @@ void WatchScriptRunner(const std::string& folder)
 		if (waitStatus == WAIT_FAILED)
 			throw std::runtime_error("Failed to wait");
 
-		std::map<Script*, std::filesystem::path> queuedScripts;
+		FindNextChange change(handle);
+		std::vector<std::pair<std::string, std::string>> scriptNames;
 		for (std::filesystem::recursive_directory_iterator next(folder), end; next != end; ++next)
 		{
-			auto extension = next->path().extension().string();
-			auto fileName = next->path().filename().string();
+			auto path = next->path();
+			auto extension = path.extension().string();
+			auto fileName = path.filename().string();
 			if (extension != ".txt")
 				continue;
-			auto lastWriteTime = last_write_time(next->path());
-			if (auto iter = g_lastWriteTimes.find(next->path()); iter != g_lastWriteTimes.end() && iter->second == lastWriteTime)
+			auto source = ReadFile(path);
+			if (auto iter = g_fileContents.find(path); iter != g_fileContents.end() && iter->second == source)
 				continue;
-			g_lastWriteTimes[next->path()] = lastWriteTime;
-			auto* form = CdeclCall<TESForm*>(0x483A00, fileName.c_str());
-			if (!form)
-			{
-				Log("Failed to find form for script %s", fileName.c_str());
+			g_fileContents[path] = source;
+			
+			if (source.empty())
 				continue;
-			}
+			source = ReplaceAll(source, "\r\n", "\n"); // lol
+			source = ReplaceAll(source, "\n", "\r\n");
 
-			if (form)
-			{
-				auto* script = DYNAMIC_CAST(form, TESForm, Script);
-				if (script)
-				{
-					queuedScripts.emplace(script, next->path());
-				}
-			}
+			scriptNames.emplace_back(fileName, source);
 		}
 
+		if (scriptNames.empty())
+			continue;
+
+		ScopedLock lock(g_criticalSection);
 		g_mainThreadExecutionQueue.push([=]
 		{
-			for (auto& entry : queuedScripts)
+			for (auto& [name, source] : scriptNames)
 			{
-				auto& path = entry.second;
-				auto* script = entry.first;
-				std::ifstream t(path);
-				std::stringstream buffer;
-				buffer << t.rdbuf();
-				auto str = buffer.str();
-				if (!str.empty())
+				auto* form = CdeclCall<TESForm*>(0x483A00, name.c_str());
+				if (!form)
 				{
-					str = ReplaceAll(str, "\r\n", "\n"); // lol
-					str = ReplaceAll(str, "\n", "\r\n");
+					continue;
+				}
+				auto* script = DYNAMIC_CAST(form, TESForm, Script);
+				if (!script)
+				{
+					Log(FormatString("Failed to cast form %s to script", name.c_str()));
+					continue;
+				}
 
-					// fixing circular reference issue
-					auto oldVarList = script->varList;
-					auto oldRefList = script->refList;
-					script->varList = {};
-					script->refList = {};
 
-					const auto scriptName = path.filename().string();
-					const auto result = ScriptRecompile(scriptName.c_str(), str.c_str(), script);
-					if (result)
+				const auto result = ScriptRecompile(name.c_str(), source.c_str(), script);
+				if (result)
+				{
+					HandleHotReloadSideEffects(script, "JIP Script Runner");
+					if (g_runJipScriptRunner)
 					{
-						char temp[sizeof Script];
-						auto* tempScript = reinterpret_cast<Script*>(temp);
-						tempScript->varList = oldVarList;
-						tempScript->refList = oldRefList;
-						ThisStdCall(0x5AA350, temp); // Clear ref list
-						ThisStdCall(0x5AA2E0, temp); // Clear var list
-
-						HandleHotReloadSideEffects(script, "JIP Script Runner");
-						Log(FormatString("Compiled script '%s' from path '%s'", scriptName.c_str(), path.string().c_str()));
-						if (g_runJipScriptRunner)
-						{
-							ScriptRun(script);
-						}
-					}
-					else
-					{
-						script->varList = oldVarList;
-						script->refList = oldRefList;
+						ScriptRun(script);
 					}
 				}
+				
 			}
 		});
-		
-		if (!FindNextChangeNotification(handle))
-			throw std::runtime_error("Failed to read again handle.");
 	}
 }
 
-void PopulateLastWriteTimes(const std::string& dir)
+void PopulateSources(const std::string& dir)
 {
 	for (std::filesystem::recursive_directory_iterator next(dir), end; next != end; ++next)
 	{
-		auto extension = next->path().extension().string();
+		const auto path = next->path();
+		const auto extension = path.extension().string();
 		if (extension != ".txt")
 			continue;
-		auto lastWriteTime = last_write_time(next->path());
-		g_lastWriteTimes.emplace(next->path(), lastWriteTime);
+		const auto source = ReadFile(path);
+		g_fileContents.emplace(path, source);
 	}
 }
 
@@ -154,7 +161,7 @@ void StartScriptRunnerWatchThread()
 		Log("No scripts folder found, Hot Reload will not watch JIP script runner files, looked in path: " + scriptsFolder);
 		return;
 	}
-	PopulateLastWriteTimes(scriptsFolder);
+	PopulateSources(scriptsFolder);
 
 	g_scriptRunnerWatchThread = std::thread(WatchScriptRunner, scriptsFolder);
 	g_scriptRunnerWatchThread.detach();
